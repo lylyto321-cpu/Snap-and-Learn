@@ -1,0 +1,19 @@
+{
+  "name": "snap-and-learn",
+  "version": "1.0.0",
+  "description": "Snap & Learn — Chinese vocabulary from photos",
+  "scripts": {
+    "sync": "npx cap sync",
+    "open:android": "npx cap open android",
+    "build:android": "npx cap sync android && npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "typescript": "^5.9.3"
+  }
+}
