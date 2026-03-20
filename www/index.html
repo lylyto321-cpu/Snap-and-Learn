@@ -83,15 +83,16 @@ body{
 .upload-zone.processing .upload-icon{display:none}
 .upload-native-btns{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;justify-content:center}
 
-/* Image annotation */
-.image-annotation{padding:14px 16px;overflow-y:auto}
-.annotation-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
-.annotation-title{font-size:14px;font-weight:600;color:var(--text1)}
-.annotation-count{font-size:12px;color:var(--accent-dark);font-weight:600}
-.annotation-sub{font-size:12px;color:var(--text3);margin-bottom:10px}
-.annotation-canvas-wrap{border-radius:12px;overflow:hidden;background:#111;line-height:0}
-.annotation-canvas-wrap canvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none}
-.annotation-actions{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:8px}
+/* Image annotation — fixed overlay covering entire viewport */
+.image-annotation{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;z-index:999}
+.annot-topbar{display:flex;align-items:center;justify-content:center;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));border-bottom:1px solid var(--border);flex-shrink:0;background:#fff}
+.annot-label{font-size:14px;font-weight:600;color:var(--text1);text-align:center}
+.annotation-canvas-wrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;background:#f1f5f9;overflow:hidden;padding:8px}
+.annotation-canvas-wrap canvas{display:block;max-width:100%;max-height:100%;cursor:crosshair;touch-action:none}
+.annotation-bottom{flex-shrink:0;padding:16px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;background:#fff;border-top:1px solid var(--border)}
+.annot-progress{font-size:13px;color:var(--text3);text-align:center}
+.annot-btn-row{display:flex;gap:10px}
+.annot-btn-row .btn{flex:1;padding:13px;font-size:15px;font-weight:600;border-radius:14px}
 
 .word-select{padding:20px}
 .word-select h4{font-size:14px;font-weight:600;margin-bottom:4px}
@@ -751,20 +752,25 @@ async function runTesseractOCR(file) {
 
 function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
   const annotDiv = document.getElementById('imageAnnotation');
-  annotDiv.style.display = 'block';
+  annotDiv.style.display = 'flex';
   const imageURL = URL.createObjectURL(file);
   const selected = new Set();
   const progressLabel = (total > 1) ? `<span style="font-size:11px;color:var(--text3);margin-left:8px">${current} / ${total}</span>` : '';
   const btnLabel = (total > 1 && current < total) ? 'Next →' : 'Continue →';
 
+  const progressText = total > 1 ? `Image ${current} of ${total}` : '';
   annotDiv.innerHTML = `
-    <div class="annotation-header">
-      <span class="annotation-title">Circle the word you want to add${progressLabel}</span>
+    <div class="annot-topbar">
+      <span class="annot-label">Circle the word you want to add</span>
     </div>
     <div class="annotation-canvas-wrap" id="annotCanvasWrap" style="display:none"><canvas id="annotCanvas"></canvas></div>
-    <div class="annotation-actions">
-      <button class="btn btn-outline" id="btnAnnotClear">Clear</button>
-      <button class="btn btn-primary" id="btnAnnotConfirm" disabled>${btnLabel}</button>
+    <div class="annotation-bottom">
+      ${progressText ? `<p class="annot-progress">${progressText}</p>` : ''}
+      <div class="annot-btn-row">
+        <button class="btn btn-outline" id="btnAnnotCancel2">Cancel</button>
+        <button class="btn btn-outline" id="btnAnnotClear">Clear</button>
+        <button class="btn btn-primary" id="btnAnnotConfirm" disabled>${btnLabel}</button>
+      </div>
     </div>
   `;
 
@@ -862,6 +868,13 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
     canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; livePath = [getXY(e)]; }, { passive: false });
     canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; livePath.push(getXY(e)); redraw(); }, { passive: false });
     canvas.addEventListener('touchend',   e => { e.preventDefault(); if (!drawing) return; drawing = false; commitPath(); }, { passive: false });
+
+    function doCancel() {
+      annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+      uploadZone.style.display = '';
+      URL.revokeObjectURL(imageURL);
+    }
+    document.getElementById('btnAnnotCancel2').addEventListener('click', doCancel);
 
     document.getElementById('btnAnnotClear').addEventListener('click', () => {
       selected.clear(); livePath = []; flashPath = null; redraw(); updateCount();
