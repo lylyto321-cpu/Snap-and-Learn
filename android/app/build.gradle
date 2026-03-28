@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader -> localProperties.load(reader) }
+}
+
 android {
     namespace "com.snapandlearn.hanyulearn"
     compileSdk rootProject.ext.compileSdkVersion
@@ -19,9 +25,9 @@ android {
     signingConfigs {
         release {
             storeFile file('../../snap-and-learn.keystore')
-            storePassword 'snaplearn2026'
-            keyAlias 'snapandlearn'
-            keyPassword 'snaplearn2026'
+            storePassword localProperties['keystore.password']
+            keyAlias localProperties['keystore.alias']
+            keyPassword localProperties['keystore.keyPassword']
         }
     }
     buildTypes {
