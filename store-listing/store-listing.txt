@@ -4,71 +4,82 @@ SNAP & LEARN — Google Play Store Listing
 
 APP NAME
 --------
-Snap & Learn
+Snap & Learn: Chinese Flashcard
 
 
 SHORT DESCRIPTION (80 characters max)
 --------------------------------------
-Snap photos of Chinese text, instantly build vocabulary with flashcards & OCR.
+Learn Chinese from real life — snap any text, auto-build flashcards instantly.
 
 
 FULL DESCRIPTION (4000 characters max)
 ---------------------------------------
-Learn Chinese vocabulary the smart way — just snap a photo.
+Finally, a Chinese learning app that works the way real life does.
 
-Snap & Learn turns any Chinese text you encounter in the real world into a personal vocabulary lesson. See a restaurant menu, street sign, or textbook page? Take a photo, and the app instantly recognizes the Chinese characters, looks them up in a comprehensive dictionary, and adds them to your vocabulary list — ready to study with built-in flashcards.
+Forget drilling textbook word lists. Snap & Learn lets you learn Chinese from the world around you — menus, street signs, packaging, books, anywhere you see Chinese characters. Just take a photo, tap the words you want to learn, and they're instantly saved to your personal flashcard deck. That's it.
 
-No typing. No copying. Just point your camera and learn.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-HOW IT WORKS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📸 SNAP — Take a photo or upload an image containing Chinese text
-🔍 SELECT — Tap on the recognized characters you want to learn
-📚 LEARN — Words are saved with pinyin, definitions, and example sentences
+Millions of people are trying to learn Chinese but giving up because traditional apps feel disconnected from real life. Snap & Learn bridges that gap — turning every moment you encounter Chinese text into a learning opportunity.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-KEY FEATURES
+HOW IT WORKS — 3 STEPS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-◆ INSTANT OCR TEXT RECOGNITION
-Take a photo or upload any image with Chinese text. Our on-device OCR powered by Tesseract.js recognizes characters instantly — no internet required for text extraction. Your photos never leave your device.
+📸 SNAP — Point your camera at any Chinese text and take a photo
+👆 TAP — Touch the words you want to learn, highlighted right on the image
+🧠 MASTER — Study them with smart flashcards that track your progress
 
-◆ COMPREHENSIVE DICTIONARY
-Every recognized word is matched against CC-CEDICT, one of the most complete Chinese-English dictionaries available. Get accurate pinyin, multiple English definitions, part-of-speech tags, and HSK level indicators.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHY SNAP & LEARN?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-◆ SMART VOCABULARY LIST
-Build your personal word collection as you encounter new Chinese text in daily life. Search, sort by recently added or most difficult, and filter starred favorites. Expand any word to see detailed definitions and example sentences.
+✦ REAL-WORLD VOCABULARY
+Don't study words you'll never use. Learn the words you actually encounter every day — from menus, signs, packaging, and anything else in your environment. Context makes words stick.
 
-◆ INTERACTIVE FLASHCARDS
-Study your saved vocabulary with a built-in flashcard system. Cards track your correct and incorrect answers so you can focus on words that need more practice. Flip between Chinese-to-English and English-to-Chinese modes.
+✦ INSTANT OCR — NO TYPING EVER
+Our on-device text recognition (powered by Tesseract.js) reads Chinese characters from photos instantly. No internet needed for scanning. Your photos never leave your device — complete privacy.
 
-◆ AUDIO PRONUNCIATION
-Hear native pronunciation for every word with a single tap, powered by text-to-speech. Available on both vocabulary cards and during flashcard review.
+✦ 100,000+ WORD DICTIONARY
+Every word is looked up in CC-CEDICT, one of the world's most comprehensive Chinese-English dictionaries. Get pinyin pronunciation, multiple definitions, part-of-speech, and HSK level — everything you need in one tap.
 
-◆ EXAMPLE SENTENCES
-See real-world example sentences for vocabulary words, complete with pinyin and English translations — helping you understand how words are used in context.
+✦ SMART FLASHCARDS THAT ADAPT
+Our flashcard system remembers which words trip you up and prioritizes them. Study Chinese→English or flip to English→Chinese. The more you practice, the smarter your deck gets.
 
-◆ VISUAL WORD SELECTION
-After scanning an image, words are highlighted directly on your photo. Tap individual words to select exactly which ones to save — you're always in control of what goes into your vocabulary.
+✦ HEAR IT SPOKEN INSTANTLY
+Tap any word to hear it pronounced clearly. Perfect for getting tones right — the part of Chinese that trips up most learners.
 
-◆ PRIVACY FIRST
-Photos are processed entirely on your device. Images are never uploaded to any server. Your vocabulary syncs securely with your Google account via Firebase so it's always backed up and available.
+✦ EXAMPLE SENTENCES IN CONTEXT
+See how each word is used in real sentences, with pinyin and English translations. Understanding words in context is how fluency actually develops.
 
-◆ CLOUD SYNC
-Sign in with Google to sync your vocabulary across devices. Your word list, starred items, and flashcard progress are securely stored and always up to date.
+✦ YOUR WORDS, ALWAYS WITH YOU
+Sign in with Google and your entire vocabulary list — words, stars, flashcard scores — syncs instantly across all your devices. Never lose your progress.
+
+✦ BUILT FOR YOUR PRIVACY
+Photos processed 100% on your device. Nothing uploaded. Your data is yours.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PERFECT FOR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• Chinese language students at any level
-• Travelers in Chinese-speaking countries
-• Heritage speakers expanding their literacy
-• Anyone who encounters Chinese text and wants to learn from it
+🎓 Students tired of boring textbook vocabulary lists
+✈️ Travelers exploring China, Taiwan, or any Chinese-speaking region
+👨‍👩‍👧 Heritage speakers reconnecting with the language
+🍜 Food lovers who want to actually read a Chinese menu
+📖 HSK exam preppers building vocabulary fast
+🌏 Anyone curious about the Chinese text around them
 
-Download Snap & Learn today and turn the Chinese text around you into your personal classroom.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT LEARNERS SAY THIS REPLACES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ Manually typing characters into a dictionary app
+❌ Screenshotting text and forgetting about it
+❌ Carrying a paper phrasebook
+❌ Paying for expensive tutors just to learn new words
+
+✅ Snap & Learn does it all — free, instant, and actually fun.
+
+Start building your Chinese vocabulary from real life today.
+Download Snap & Learn — because the best classroom is the world around you.
 
 
 CATEGORY
@@ -83,7 +94,8 @@ Everyone
 
 TAGS / KEYWORDS
 ---------------
-Chinese, Mandarin, vocabulary, learn Chinese, flashcards, OCR, text recognition,
-language learning, pinyin, dictionary, HSK, Chinese characters, study Chinese,
-education, language, camera translate, Chinese English dictionary, hanzi,
-vocabulary builder, Chinese reader
+learn Chinese, Chinese vocabulary, Mandarin flashcards, Chinese OCR,
+Chinese dictionary, HSK vocabulary, pinyin, learn Mandarin, Chinese characters,
+hanzi, language learning, Chinese English dictionary, vocabulary builder,
+camera Chinese, Chinese text recognition, study Chinese, Chinese reader,
+Mandarin learning, Chinese flashcard, language study
