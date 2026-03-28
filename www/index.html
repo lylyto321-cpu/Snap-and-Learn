@@ -311,11 +311,6 @@ body{
 @keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .vocab-list{animation:fadeInUp .2s var(--ease) both}
 
-/* Splash screen */
-.splash{position:fixed;inset:0;z-index:3000;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .6s var(--ease)}
-.splash.fade-out{opacity:0;pointer-events:none}
-.splash img{width:120px;height:120px;border-radius:24px;animation:splash-in .6s var(--ease) both}
-@keyframes splash-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 
 /* Profile Modal */
 /* Login gate */
@@ -351,11 +346,6 @@ body{
 </style>
 </head>
 <body>
-
-<!-- Splash Screen -->
-<div class="splash" id="splashScreen">
-  <img src="logo.png" alt="Snap & Learn">
-</div>
 
 <!-- Login Gate -->
 <div class="login-gate" id="loginGate">
@@ -492,11 +482,6 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-// ==================== SPLASH SCREEN ====================
-setTimeout(() => {
-  const splash = document.getElementById('splashScreen');
-  if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
-}, 1500);
 
 // ==================== CAPACITOR DETECTION ====================
 const IS_NATIVE = !!(window.Capacitor?.isNativePlatform?.());
