@@ -5,18 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Snap &amp; Learn</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="firebase-app-compat.js"></script>
+<script src="firebase-auth-compat.js"></script>
+<script src="firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --accent:#0D9488;--accent-light:#F0FDFA;--accent-dark:#0F766E;
-  --orange:#F59E0B;--orange-light:#FFFBEB;
-  --bg:#F8FAFB;--card:#fff;--text:#1E293B;--text2:#64748B;--text3:#94A3B8;
-  --border:#E2E8F0;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-  --shadow-lg:0 4px 24px rgba(0,0,0,.08),0 8px 48px rgba(0,0,0,.06);
+  --accent-muted:rgba(13,148,136,.08);
+  --orange:#E5A117;--orange-light:#FFFDF5;
+  --bg:#F0F5F4;--card:#fff;--text:#1A2332;--text2:#5E6B7A;--text3:#9BA5B1;
+  --border:#E8ECF0;--shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,.06),0 8px 32px rgba(0,0,0,.04);
   --radius:14px;
-  --nav-h:56px;--topbar-h:52px;--bottombar-h:56px;
-  --ease:cubic-bezier(.4,0,.2,1);
+  --nav-h:56px;--topbar-h:48px;--bottombar-h:60px;
+  --ease:cubic-bezier(.22,1,.36,1);
   --sat:env(safe-area-inset-top,0px);
   --sab:env(safe-area-inset-bottom,0px);
 }
@@ -55,106 +59,119 @@ body{
 .app-screen.slide-right{transform:translateX(100%);opacity:0}
 
 /* Top bar */
-.top-bar{height:var(--topbar-h);background:#fff;display:flex;align-items:center;padding:0 20px;font-size:17px;font-weight:700;letter-spacing:-.2px;position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(0,0,0,.06)}
-.top-bar .actions{margin-left:auto;display:flex;gap:8px}
-.top-bar .icon-btn,.icon-btn{width:36px;height:36px;border:none;background:transparent;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s var(--ease)}
-.top-bar .icon-btn:hover,.icon-btn:hover{background:var(--accent-light)}
+.top-bar{height:var(--topbar-h);background:var(--bg);display:flex;align-items:center;padding:0 20px;font-size:17px;font-weight:700;letter-spacing:-.2px;position:sticky;top:0;z-index:40;border-bottom:none}
+.top-bar .actions{margin-left:auto;display:flex;gap:4px}
+.top-bar .icon-btn,.icon-btn{width:36px;height:36px;border:none;background:transparent;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s var(--ease);color:var(--text2)}
+.top-bar .icon-btn:hover,.icon-btn:hover{background:var(--accent-muted);color:var(--accent)}
 
 /* Bottom nav — safe area padding for Android home indicator */
 .bottom-nav{
   height:calc(var(--bottombar-h) + var(--sab));
   padding-bottom:var(--sab);
-  background:#fff;
+  background:var(--bg);
   display:flex;
-  border-top:1px solid rgba(0,0,0,.06);
+  border-top:none;
   z-index:50;
   flex-shrink:0;
 }
-.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;font-size:10px;font-weight:500;letter-spacing:.2px;color:var(--text3);transition:all .2s var(--ease);-webkit-tap-highlight-color:transparent;position:relative}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:none;background:transparent;cursor:pointer;font-size:10px;font-weight:500;letter-spacing:.3px;color:var(--text3);transition:all .2s var(--ease);-webkit-tap-highlight-color:transparent;position:relative;text-transform:uppercase}
 .nav-tab.active{color:var(--accent);font-weight:600}
-.nav-tab.active::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
-.nav-tab .nav-icon{font-size:22px;display:flex;align-items:center;justify-content:center;height:22px}
+.nav-tab.active .nav-icon{background:var(--accent-muted);border-radius:12px;padding:2px 12px}
+.nav-tab .nav-icon{font-size:22px;display:flex;align-items:center;justify-content:center;height:26px;transition:all .2s var(--ease);padding:2px 12px;border-radius:12px}
 
 /* Upload screen */
-.upload-zone{margin:20px 16px;border:2px dashed var(--border);border-radius:20px;padding:48px 24px;text-align:center;transition:all .25s var(--ease);min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(255,255,255,.5)}
-.upload-zone.drag-over{border-color:var(--accent);background:var(--accent-light);transform:scale(1.01)}
-.upload-zone .upload-icon{opacity:.35;color:var(--text2)}
-.upload-zone p{color:var(--text2);font-size:14px;font-weight:400}
+.upload-zone{margin:24px 20px;border:1.5px dashed var(--border);border-radius:20px;padding:52px 28px;text-align:center;transition:all .3s var(--ease);min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.upload-zone.drag-over{border-color:var(--accent);background:var(--accent-light);transform:scale(1.005)}
+.upload-zone .upload-icon{opacity:.25;color:var(--text3)}
+.upload-zone p{color:var(--text3);font-size:13px;font-weight:400;line-height:1.5}
 .upload-zone.processing .upload-icon{display:none}
-.upload-native-btns{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;justify-content:center}
+.upload-native-btns{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center}
 
 /* Image annotation — fixed overlay covering entire viewport */
-.image-annotation{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;z-index:999}
-.annot-topbar{display:flex;align-items:center;justify-content:center;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));border-bottom:1px solid var(--border);flex-shrink:0;background:#fff}
-.annot-label{font-size:14px;font-weight:600;color:var(--text1);text-align:center}
-.annotation-canvas-wrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;background:#f1f5f9;overflow:hidden;padding:8px}
+.image-annotation{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;flex-direction:column;background:#000;overflow:hidden;z-index:1000}
+.annot-topbar{display:flex;align-items:center;justify-content:center;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));flex-shrink:0;background:transparent;position:relative}
+.annot-close-btn{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:transparent;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:opacity .15s}
+.annot-close-btn:hover{opacity:0.7}
+.annot-label{font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);text-align:center}
+.annotation-canvas-wrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;padding:8px}
 .annotation-canvas-wrap canvas{display:block;max-width:100%;max-height:100%;cursor:crosshair;touch-action:none}
-.annotation-bottom{flex-shrink:0;padding:16px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;background:#fff;border-top:1px solid var(--border)}
-.annot-progress{font-size:13px;color:var(--text3);text-align:center}
+.annotation-bottom{flex-shrink:0;padding:14px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.annot-progress{font-size:12px;color:rgba(255,255,255,0.4);text-align:center;letter-spacing:.3px}
 .annot-btn-row{display:flex;gap:10px}
-.annot-btn-row .btn{flex:1;padding:13px;font-size:15px;font-weight:600;border-radius:14px}
+.annot-btn-row .btn{flex:1;padding:12px;font-size:14px;font-weight:600;border-radius:12px}
+.annot-btn-row .btn-outline{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,0.2);background:transparent}
+.annot-btn-row .btn-outline:hover{background:rgba(255,255,255,0.08)}
+.annot-ocr-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none}
+.annot-ocr-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+.annot-ocr-status{font-size:13px;font-weight:500;color:rgba(255,255,255,0.85);text-align:center}
 
 .word-select{padding:20px}
-.word-select h4{font-size:14px;font-weight:600;margin-bottom:4px}
-.word-select p{font-size:12px;color:var(--text2);margin-bottom:14px}
+.word-select h4{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.word-select p{font-size:12px;color:var(--text3);margin-bottom:14px}
 .word-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-.word-chip{padding:8px 14px;border-radius:var(--radius);border:1.5px solid var(--accent);background:var(--accent-light);color:var(--accent-dark);font-size:15px;cursor:pointer;transition:all .2s var(--ease);display:flex;align-items:center;gap:6px}
-.word-chip:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(13,148,136,.15)}
-.word-chip .word-chip-zh{font-family:'Noto Sans SC','Inter',sans-serif;font-weight:700;font-size:17px}
+.word-chip{padding:8px 14px;border-radius:12px;border:1px solid rgba(13,148,136,.2);background:var(--accent-muted);color:var(--accent-dark);font-size:15px;cursor:pointer;transition:all .2s var(--ease);display:flex;align-items:center;gap:6px}
+.word-chip:hover{background:rgba(13,148,136,.1)}
+.word-chip .word-chip-zh{font-family:'Noto Sans SC','Inter',sans-serif;font-weight:700;font-size:18px}
 .word-chip .word-chip-en{font-size:11px;color:var(--text2)}
-.word-chip.deselected{border-color:var(--border);background:#fff;color:var(--text3);opacity:.55}
-.word-chip.deselected:hover{opacity:.7}
+.word-chip.deselected{border-color:var(--border);background:#fff;color:var(--text3);opacity:.5}
+.word-chip.deselected:hover{opacity:.65}
 .word-chip.deselected .word-chip-en{color:var(--text3)}
-.word-chip.already-added{border-color:var(--border);background:#f8fafc;color:var(--text3);cursor:default;opacity:.35}
+.word-chip.already-added{border-color:var(--border);background:#f8fafc;color:var(--text3);cursor:default;opacity:.3}
 .word-select-actions{display:flex;gap:10px}
 .word-select-actions .btn{padding:10px 22px;font-size:13px}
 
 /* Shimmer / loading */
-.shimmer-container{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%}
-.shimmer{width:80%;height:14px;border-radius:8px;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite}
+.shimmer-container{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%}
+.shimmer{width:80%;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--border) 25%,var(--bg) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.6s ease infinite}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .shimmer:nth-child(2){width:60%}
 .shimmer:nth-child(3){width:70%}
-.processing-text{font-size:13px;color:var(--text2);margin-top:8px;animation:pulse 1s infinite alternate}
-@keyframes pulse{from{opacity:.4}to{opacity:1}}
+.processing-text{font-size:12px;color:var(--text3);margin-top:8px;animation:pulse 1.2s infinite alternate}
+@keyframes pulse{from{opacity:.35}to{opacity:.85}}
 
 /* Toast — fixed position for native */
-.toast{position:fixed;bottom:calc(var(--bottombar-h) + var(--sab) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,41,59,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:500;opacity:0;transition:all .35s var(--ease);z-index:200;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.toast{position:fixed;bottom:calc(var(--bottombar-h) + var(--sab) + 16px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:#fff;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:500;opacity:0;transition:all .3s var(--ease);z-index:200;white-space:nowrap;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.1);letter-spacing:.01em}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* Vocabulary screen */
-.vocab-controls{padding:10px 20px;display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap}
-.chip.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(13,148,136,.25)}
-.chip:hover{background:var(--accent-light);border-color:rgba(13,148,136,.3)}
-.chip.active:hover{background:var(--accent-dark)}
+.vocab-controls{padding:8px 20px;display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap;letter-spacing:.2px}
+.chip.active{background:var(--accent-muted);color:var(--accent-dark);border-color:rgba(13,148,136,.2);box-shadow:none;font-weight:600}
+.chip:hover{background:var(--accent-muted);border-color:rgba(13,148,136,.15)}
+.chip.active:hover{background:rgba(13,148,136,.12)}
 
-.vocab-list{padding:0;background:#fff;border-radius:var(--radius);margin:0 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid var(--border);overflow:hidden}
-.vocab-card{background:transparent;border-radius:0;padding:10px 14px;margin-bottom:0;box-shadow:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s var(--ease)}
-.vocab-card:last-child{border-bottom:none}
-.vocab-card:hover{background:var(--accent-light);transform:none;box-shadow:none}
-.vocab-card-header{display:flex;align-items:center;gap:20px}
-.vocab-chinese{font-family:'Noto Sans SC','Inter',sans-serif;font-size:20px;font-weight:700;line-height:1;color:var(--accent-dark);background:var(--accent-light);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.vocab-info{flex:1;min-width:0;padding-left:16px}
-.vocab-pinyin{font-size:11px;color:var(--accent);font-weight:500;letter-spacing:.2px}
-.vocab-english{font-size:13px;color:var(--text);font-weight:500;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vocab-card-meta{display:flex;align-items:center;gap:8px;margin-top:4px}
-.pos-chip{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.3px}
-.pos-noun{background:#DBEAFE;color:#1D4ED8}
+.vocab-list{padding:0;background:transparent;border-radius:0;margin:0 16px calc(16px + env(safe-area-inset-bottom));box-shadow:none;border:none;overflow:hidden;display:flex;flex-direction:column;gap:6px}
+.swipe-wrap{position:relative;overflow:hidden;border-bottom:none;border-radius:14px}
+.swipe-wrap:last-child{border-bottom:none}
+.swipe-delete{position:absolute;right:0;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;background:#EF4444;color:#fff;font-size:13px;font-weight:600;cursor:pointer;z-index:1;border-radius:0 14px 14px 0}
+.vocab-card{position:relative;z-index:2;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:0;box-shadow:0 1px 2px rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.04);cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .2s var(--ease)}
+.vocab-card:hover{background:#fff;transform:none;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.vocab-card-header{display:flex;align-items:center;gap:12px}
+.vocab-chinese{font-family:'Noto Sans SC','Inter',sans-serif;font-size:22px;font-weight:700;line-height:1;color:var(--text);background:var(--accent-muted);border-radius:12px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vocab-info{flex:1;min-width:0;padding-left:4px}
+.vocab-pinyin{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.3px}
+.vocab-english{font-size:13px;color:var(--text2);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vocab-card-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.pos-chip{font-size:9px;padding:2px 7px;border-radius:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.pos-noun{background:#EEF2FF;color:#4338CA}
 .pos-verb{background:#FEF3C7;color:#B45309}
 .pos-adj{background:#F3E8FF;color:#7C3AED}
-.pos-nv{background:var(--accent-light);color:var(--accent-dark)}
-.wrong-badge{font-size:11px;color:#EF4444;font-weight:600}
+.pos-nv{background:var(--accent-muted);color:var(--accent-dark)}
+.wrong-badge{font-size:10px;color:var(--text3);font-weight:500;opacity:.7}
+.date-header{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:16px 4px 6px;margin-top:4px}
+.date-header:first-child{margin-top:0;padding-top:8px}
 .card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.star-btn,.audio-btn{width:32px;height:32px;border:1px solid var(--border);background:#fff;border-radius:50%;cursor:pointer;transition:all .15s var(--ease);display:flex;align-items:center;justify-content:center;color:var(--text2)}
-.star-btn:hover,.audio-btn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
-.star-btn.starred{color:#F59E0B}
+.star-btn,.audio-btn{width:30px;height:30px;border:none;background:transparent;border-radius:50%;cursor:pointer;transition:all .15s var(--ease);display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.star-btn:hover,.audio-btn:hover{background:var(--accent-muted);color:var(--accent)}
+.star-btn.starred{color:var(--orange)}
 
 /* Expanded card detail */
 .vocab-detail{max-height:0;overflow:hidden;transition:max-height .35s var(--ease)}
 .vocab-card.expanded .vocab-detail{max-height:600px}
-.vocab-card.expanded{box-shadow:var(--shadow);border-color:rgba(13,148,136,.15)}
-.detail-content{padding-top:14px;border-top:1px solid var(--border);margin-top:14px}
+.vocab-card.expanded{box-shadow:0 2px 12px rgba(0,0,0,.06);border-color:rgba(13,148,136,.1)}
+.detail-content{padding-top:12px;border-top:1px solid var(--border);margin-top:12px}
+.examples-section{margin-top:14px}
+.examples-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .example-sentence{margin-bottom:8px;padding:10px 12px;background:var(--bg);border-radius:10px}
 .example-zh{font-family:'Noto Sans SC','Inter',sans-serif;font-size:15px;font-weight:500}
 .example-py{font-size:12px;color:var(--text2);margin-top:2px}
@@ -167,98 +184,104 @@ body{
 .related-chips{display:flex;gap:6px;flex-wrap:wrap}
 .related-chip{padding:4px 12px;border-radius:var(--radius);background:var(--accent-light);color:var(--accent-dark);font-size:13px;cursor:pointer;border:none;transition:all .15s var(--ease);font-weight:500}
 .related-chip:hover{background:rgba(13,148,136,.15)}
-.btn-remove{width:100%;padding:8px;margin-top:14px;border:1px solid #FCA5A5;background:#fff;color:#EF4444;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s var(--ease)}
-.btn-remove:hover{background:#FEF2F2;border-color:#EF4444}
+.btn-remove{width:100%;padding:8px;margin-top:14px;border:1px solid rgba(220,38,38,.12);background:#fff;color:#DC2626;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s var(--ease)}
+.btn-remove:hover{background:#FEF2F2;border-color:rgba(220,38,38,.25)}
 
 /* Search bar */
-.search-bar{padding:8px 20px}
-.search-input{width:100%;padding:10px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:all .2s var(--ease);background:#fff}
-.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,148,136,.1)}
+.search-bar{padding:6px 20px}
+.search-input{width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:all .2s var(--ease);background:#fff;color:var(--text)}
+.search-input:focus{border-color:rgba(13,148,136,.3);box-shadow:0 0 0 3px rgba(13,148,136,.06)}
+.search-input::placeholder{color:var(--text3)}
 .search-bar.hidden{display:none}
 
 /* Flashcard screen */
 .fc-screen{padding:0px 20px 20px;display:flex;flex-direction:column;align-items:center;height:100%}
-.fc-start{text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:40px}
-.fc-start h2{font-size:22px;font-weight:700;letter-spacing:-.3px}
-.fc-start p{color:var(--text2);font-size:14px}
-.fc-options{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.btn{padding:12px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(13,148,136,.25)}
-.btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.3)}
-.btn-primary:active{transform:translateY(0)}
-.btn-outline{background:#fff;color:var(--text);border:1.5px solid var(--border)}
-.btn-outline:hover{background:var(--accent-light);border-color:rgba(13,148,136,.3)}
+.fc-start{text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:48px}
+.fc-start h2{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+.fc-start p{color:var(--text3);font-size:13px}
+.fc-options{display:flex;flex-wrap:nowrap;gap:5px;justify-content:center;padding:0 12px}
+.fc-options .chip{font-size:10px;padding:5px 9px;white-space:nowrap;letter-spacing:0}
+.btn{padding:11px 22px;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif;letter-spacing:.01em}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(13,148,136,.2)}
+.btn-primary:hover{background:var(--accent-dark);box-shadow:0 2px 8px rgba(13,148,136,.25)}
+.btn-primary:active{transform:scale(.97);box-shadow:none}
+.btn-outline{background:#fff;color:var(--text2);border:1.5px solid var(--border)}
+.btn-outline:hover{background:var(--accent-muted);border-color:rgba(13,148,136,.2);color:var(--accent-dark)}
 
 /* Progress bar */
-.fc-progress{width:100%;margin-bottom:16px}
-.fc-progress-text{font-size:12px;color:var(--text3);text-align:center;margin-bottom:6px;font-weight:500}
-.fc-progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
-.fc-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width .4s var(--ease);border-radius:2px}
+.fc-progress{width:100%;margin-bottom:18px}
+.fc-progress-text{font-size:11px;color:var(--text3);text-align:center;margin-bottom:6px;font-weight:500;letter-spacing:.3px}
+.fc-progress-bar{height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.fc-progress-fill{height:100%;background:var(--accent);transition:width .4s var(--ease);border-radius:1px}
 
 /* Flashcard */
-.fc-card-container{width:100%;max-width:320px;height:320px;perspective:1200px;margin:0 auto}
-.fc-card{width:100%;height:100%;position:relative;transition:transform .55s var(--ease);transform-style:preserve-3d}
+.fc-card-container{width:100%;max-width:300px;height:340px;perspective:1200px;margin:0 auto}
+.fc-card{width:100%;height:100%;position:relative;transition:transform .6s var(--ease);transform-style:preserve-3d}
 .fc-card.flipped{transform:rotateY(180deg)}
-.fc-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 20px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow:hidden}
+.fc-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;overflow:hidden}
 .fc-back{transform:rotateY(180deg)}
-.fc-front .fc-word{font-family:'Noto Sans SC','Inter',sans-serif;font-size:52px;font-weight:700;color:var(--text)}
-.fc-front .audio-btn{margin-top:14px;color:var(--accent)}
+.fc-front .fc-word{font-family:'Noto Sans SC','Inter',sans-serif;font-size:56px;font-weight:700;color:var(--text)}
+.fc-front .audio-btn{margin-top:16px;color:var(--accent);border:none;background:var(--accent-muted)}
 .fc-pinyin-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:4px}
 .fc-zh-answer{font-family:'Noto Sans SC','Inter',sans-serif;font-size:44px;font-weight:700;color:var(--text);margin-bottom:2px}
-.fc-back .fc-pinyin{font-size:17px;color:var(--text3);font-weight:400;letter-spacing:.01em}
-.fc-back .fc-meanings{font-size:12px;color:var(--text2);text-align:center;margin-top:8px;line-height:1.75;width:100%}
+.fc-back .fc-pinyin{font-size:16px;color:var(--text3);font-weight:400;letter-spacing:.02em}
+.fc-back .fc-meanings{font-size:12px;color:var(--text2);text-align:center;margin-top:8px;line-height:1.8;width:100%}
 .fc-back .fc-meanings .def-num{color:var(--accent);font-weight:600;margin-right:3px}
 .fc-back .fc-pos{margin-top:4px}
-.fc-back .fc-example{font-size:11px;color:var(--text2);margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:10px;width:100%;line-height:1.5}
+.fc-back .fc-example{font-size:11px;color:var(--text2);margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:12px;width:100%;line-height:1.6}
+.fc-back .fc-example:empty{display:none}
 .fc-ex-zh{color:var(--text2);margin-bottom:2px}
 .fc-ex-en{color:var(--text3);font-style:italic}
-.fc-result-banner{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;display:none;align-items:center;justify-content:center;flex-shrink:0}
-#fcCard[data-mode="en"] .fc-front .fc-word{font-family:'Inter',sans-serif;font-size:22px;font-weight:600;line-height:1.4}
+.fc-result-banner{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;display:none;align-items:center;justify-content:center;flex-shrink:0}
+#fcCard[data-mode="en"] .fc-front .fc-word{font-family:'Inter',sans-serif;font-size:20px;font-weight:600;line-height:1.5;color:var(--text2)}
 #fcCard[data-mode="en"] .fc-front .audio-btn{display:none}
-.fc-result-correct{display:flex;background:rgba(13,148,136,.15);color:var(--accent-dark)}
-.fc-result-wrong{display:flex;background:rgba(239,68,68,.12);color:#DC2626}
+.fc-result-correct{display:flex;background:rgba(13,148,136,.12);color:var(--accent-dark)}
+.fc-result-wrong{display:flex;background:rgba(220,38,38,.1);color:#DC2626}
 
-.fc-nav{display:flex;justify-content:center;align-items:center;gap:16px;width:100%;margin-top:16px}
-.fc-nav-btn{width:38px;height:38px;border:1.5px solid var(--border);background:#fff;border-radius:12px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
-.fc-nav-btn:hover:not(:disabled){background:var(--accent-light);border-color:var(--accent)}
-.fc-nav-btn:disabled{opacity:.25;cursor:not-allowed}
-.fc-nav-counter{font-size:12px;color:var(--text3);font-weight:500}
-.fc-buttons{display:flex;gap:12px;margin-top:16px;justify-content:center}
-.btn-correct{background:var(--accent);color:#fff;padding:11px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(13,148,136,.2);display:inline-flex;align-items:center;gap:7px}
-.btn-correct:hover{background:var(--accent-dark);transform:translateY(-1px)}
-.btn-pass{background:var(--orange);color:#fff;padding:11px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(245,158,11,.2);display:inline-flex;align-items:center;gap:7px}
-.btn-pass:hover{background:#D97706;transform:translateY(-1px)}
-.btn-next{background:var(--accent);color:#fff;padding:12px 28px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:none;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(13,148,136,.2)}
-.btn-next:hover{background:var(--accent-dark);transform:translateY(-1px)}
+.fc-nav{display:flex;justify-content:center;align-items:center;gap:20px;width:100%;margin-top:18px}
+.fc-nav-btn{width:36px;height:36px;border:1.5px solid var(--border);background:#fff;border-radius:10px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease);color:var(--text3)}
+.fc-nav-btn:hover:not(:disabled){background:var(--accent-muted);border-color:rgba(13,148,136,.2);color:var(--accent)}
+.fc-nav-btn:disabled{opacity:.2;cursor:not-allowed}
+.fc-nav-counter{font-size:12px;color:var(--text3);font-weight:500;min-width:48px;text-align:center}
+.fc-buttons{display:flex;gap:10px;margin-top:18px;justify-content:center}
+.btn-correct{background:var(--accent);color:#fff;padding:11px 22px;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:0 1px 4px rgba(13,148,136,.15);display:inline-flex;align-items:center;gap:6px}
+.btn-correct:hover{background:var(--accent-dark)}
+.btn-correct:active{transform:scale(.97)}
+.btn-pass{background:#fff;color:var(--orange);padding:11px 22px;border:1.5px solid rgba(229,161,23,.25);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:none;display:inline-flex;align-items:center;gap:6px}
+.btn-pass:hover{background:var(--orange-light);border-color:var(--orange)}
+.btn-pass:active{transform:scale(.97)}
+.btn-next{background:var(--accent);color:#fff;padding:11px 26px;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:none;transition:all .2s var(--ease);font-family:'Inter',sans-serif;box-shadow:0 1px 4px rgba(13,148,136,.15)}
+.btn-next:hover{background:var(--accent-dark)}
+.btn-next:active{transform:scale(.97)}
 
 /* Results */
-.fc-results{text-align:center;padding-top:20px;width:100%}
-.fc-results h2{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.3px}
-.donut-container{width:120px;height:120px;margin:0 auto 16px}
+.fc-results{text-align:center;padding-top:24px;width:100%}
+.fc-results h2{font-size:20px;font-weight:700;margin-bottom:16px;letter-spacing:-.3px;color:var(--text)}
+.donut-container{width:110px;height:110px;margin:0 auto 16px}
 .donut-container svg{width:100%;height:100%}
-.wrong-list{text-align:left;padding:0 8px;margin:16px 0}
-.wrong-item{display:flex;justify-content:space-between;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:6px;font-size:14px;border:1px solid rgba(0,0,0,.04)}
+.wrong-list{text-align:left;padding:0 4px;margin:16px 0}
+.wrong-item{display:flex;justify-content:space-between;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;font-size:13px;border:1px solid rgba(0,0,0,.03);box-shadow:0 1px 2px rgba(0,0,0,.02)}
 .fc-results .fc-buttons{justify-content:center;flex-wrap:wrap}
 
 /* Scrollbar */
-.app-screen::-webkit-scrollbar{width:3px}
-.app-screen::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}
+.app-screen::-webkit-scrollbar{width:2px}
+.app-screen::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
 .app-screen::-webkit-scrollbar-track{background:transparent}
 
 /* Selection */
-::selection{background:rgba(13,148,136,.15);color:var(--text)}
+::selection{background:rgba(13,148,136,.12);color:var(--text)}
 
 /* Meaning toggle */
 .vocab-list.meaning-hidden .vocab-english,
 .vocab-list.meaning-hidden .vocab-pinyin{visibility:hidden}
-.meaning-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px}
-.meaning-toggle-label{font-size:12px;color:var(--text2);font-weight:500}
+.meaning-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px}
+.meaning-toggle-label{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.2px}
 .toggle-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer}
 .toggle-switch input{position:absolute;opacity:0;width:0;height:0}
-.toggle-track{width:36px;height:20px;background:var(--border);border-radius:10px;transition:background .2s var(--ease);position:relative;display:block}
-.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-track{width:34px;height:20px;background:var(--border);border-radius:10px;transition:background .2s var(--ease);position:relative;display:block}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s var(--ease);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .toggle-switch input:checked ~ .toggle-track{background:var(--accent)}
-.toggle-switch input:checked ~ .toggle-track .toggle-thumb{transform:translateX(16px)}
+.toggle-switch input:checked ~ .toggle-track .toggle-thumb{transform:translateX(14px)}
 
 /* Dictionary section */
 .dict-section{margin-bottom:14px}
@@ -287,23 +310,80 @@ body{
 /* Fade in animation */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .vocab-list{animation:fadeInUp .2s var(--ease) both}
+
+/* Splash screen */
+.splash{position:fixed;inset:0;z-index:3000;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .6s var(--ease)}
+.splash.fade-out{opacity:0;pointer-events:none}
+.splash img{width:120px;height:120px;border-radius:24px;animation:splash-in .6s var(--ease) both}
+@keyframes splash-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+
+/* Profile Modal */
+/* Login gate */
+.login-gate{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;transition:opacity .5s var(--ease)}
+.login-gate.hidden{opacity:0;pointer-events:none}
+.login-logo{margin-bottom:20px}
+.login-title{font-size:42px;font-weight:800;margin-bottom:12px;letter-spacing:-1.5px;color:var(--text);line-height:1}
+.login-title span{color:var(--accent)}
+.login-subtitle{font-size:15px;color:var(--text3);margin-bottom:48px;text-align:center;line-height:1.6;max-width:280px;letter-spacing:.1px;font-weight:400}
+.login-form{width:100%;max-width:300px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.login-error{font-size:13px;color:#DC2626;text-align:center;min-height:18px}
+
+.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:900;opacity:0;transition:opacity .3s var(--ease);pointer-events:none;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.profile-overlay.open{opacity:1;pointer-events:auto}
+.profile-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:20px 24px calc(24px + var(--sab));z-index:901;transform:translateY(100%);transition:transform .35s var(--ease);box-shadow:0 -2px 24px rgba(0,0,0,.08);max-height:80vh;overflow-y:auto}
+.profile-overlay.open .profile-panel{transform:translateY(0)}
+.profile-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.profile-panel-header h3{font-size:17px;font-weight:700}
+.profile-panel-close{width:32px;height:32px;border:none;background:var(--bg);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px}
+.profile-user-info{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.profile-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent-muted)}
+.profile-name{font-size:15px;font-weight:600}
+.profile-email{font-size:12px;color:var(--text3)}
+.profile-sync-status{font-size:11px;color:var(--accent);font-weight:500;margin-top:2px}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 20px;border:1.5px solid var(--border);border-radius:14px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .25s var(--ease);font-family:'Inter',sans-serif;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.btn-google:hover{background:var(--bg);border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.btn-google:active{transform:scale(.985);box-shadow:none}
+.btn-google img{width:20px;height:20px}
+.btn-signout{width:100%;padding:12px;border:1px solid rgba(220,38,38,.15);background:#fff;color:#DC2626;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s var(--ease);font-family:'Inter',sans-serif;margin-top:8px}
+.btn-signout:hover{background:#FEF2F2;border-color:rgba(220,38,38,.3)}
+.btn-sync-now{width:100%;padding:12px;border:1px solid rgba(13,148,136,.15);background:var(--accent-muted);color:var(--accent-dark);border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s var(--ease);font-family:'Inter',sans-serif}
+.btn-sync-now:hover{background:rgba(13,148,136,.12)}
 </style>
 </head>
 <body>
 
-<div id="appRoot">
+<!-- Splash Screen -->
+<div class="splash" id="splashScreen">
+  <img src="logo.png" alt="Snap & Learn">
+</div>
+
+<!-- Login Gate -->
+<div class="login-gate" id="loginGate">
+  <div class="login-title">Snap <span>&</span> Learn</div>
+  <div class="login-subtitle">Vocabulary is your way to fluency</div>
+  <div class="login-form" id="loginForm">
+    <div class="login-error" id="loginError"></div>
+    <button class="btn-google" id="btnGoogleLogin" style="width:100%;padding:14px 20px;font-size:15px">
+      <img src="google.svg" alt="Google" style="width:22px;height:22px">
+      Continue with Google
+    </button>
+    <button id="btnSkipLogin" style="margin-top:16px;background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif">Skip for now</button>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
   <div class="app-container" id="appContainer">
 
     <!-- Upload Screen -->
     <div class="app-screen" id="screenUpload">
-      <div class="top-bar">Snap &amp; Learn<div class="actions"><button class="icon-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button></div></div>
+      <div class="top-bar"><div class="actions"><button class="icon-btn profile-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button></div></div>
       <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
       <div class="upload-zone" id="uploadZone">
         <div class="upload-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
         <p id="uploadZoneText">Take a photo to extract Chinese vocabulary</p>
-        <div class="upload-native-btns" id="nativeBtns" style="display:none">
-          <button class="btn btn-primary" id="btnCamera">📷 Camera</button>
-          <button class="btn btn-outline" id="btnGallery">🖼 Gallery</button>
+        <div class="upload-native-btns" id="nativeBtns">
+          <button class="btn btn-primary" id="btnCamera">Camera</button>
+          <button class="btn btn-primary" id="btnGallery">Gallery</button>
         </div>
         <button id="btnTrySample" style="font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:4px;text-decoration:underline">Try sample image</button>
       </div>
@@ -314,10 +394,9 @@ body{
     <!-- Vocabulary Screen -->
     <div class="app-screen hidden" id="screenVocab">
       <div class="top-bar">
-        Vocabulary
         <div class="actions">
           <button class="icon-btn" id="searchToggle" title="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-          <button class="icon-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+          <button class="icon-btn profile-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
         </div>
       </div>
       <div class="search-bar hidden" id="searchBar">
@@ -340,16 +419,16 @@ body{
 
     <!-- Flashcard Screen -->
     <div class="app-screen hidden" id="screenFlash">
-      <div class="top-bar">Flashcards<div class="actions"><button class="icon-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button></div></div>
+      <div class="top-bar"><div class="actions"><button class="icon-btn profile-btn" title="Profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button></div></div>
       <div id="fcCloseBtnRow" style="display:none;padding:2px 20px 0;justify-content:flex-end"><button class="icon-btn" id="fcCloseBtn" title="Exit session" style="color:var(--text3)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="fc-screen" id="fcScreen">
         <div class="fc-start" id="fcStart">
           <h2>Ready to practice?</h2>
           <div class="fc-options">
-            <div class="chip active" data-fc-mode="random">Randomized</div>
-            <div class="chip" data-fc-mode="recent">Recently added</div>
-            <div class="chip" data-fc-mode="starred">Starred only</div>
-            <div class="chip" data-fc-mode="wrong">Most wrong first</div>
+            <div class="chip active" data-fc-mode="random">Random</div>
+            <div class="chip" data-fc-mode="recent">Recent</div>
+            <div class="chip" data-fc-mode="starred">Starred</div>
+            <div class="chip" data-fc-mode="wrong">Most wrong</div>
           </div>
           <button class="btn btn-primary" id="fcStartBtn">Start</button>
         </div>
@@ -401,12 +480,38 @@ body{
   </div>
 </div><!-- end appRoot -->
 
+<!-- Profile Modal -->
+<div class="profile-overlay" id="profileOverlay">
+  <div class="profile-panel" id="profilePanel">
+    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px"></div>
+    <div id="profileContent"></div>
+  </div>
+</div>
+
 <!-- Toast (outside appRoot so it overlays bottom-nav too) -->
 <div class="toast" id="toast"></div>
 
 <script>
+// ==================== SPLASH SCREEN ====================
+setTimeout(() => {
+  const splash = document.getElementById('splashScreen');
+  if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
+}, 1500);
+
 // ==================== CAPACITOR DETECTION ====================
 const IS_NATIVE = !!(window.Capacitor?.isNativePlatform?.());
+
+// Initialize Google Auth plugin for native
+if (IS_NATIVE && window.Capacitor?.Plugins?.GoogleAuth) {
+  try {
+    window.Capacitor.Plugins.GoogleAuth.initialize({
+      clientId: '26569546633-gesopkcgj3j7oqvo26075gtckftnbdce.apps.googleusercontent.com',
+      scopes: ['profile', 'email'],
+      grantOfflineAccess: true
+    });
+    console.log('GoogleAuth initialized');
+  } catch(e) { console.error('GoogleAuth init failed:', e); }
+}
 
 // ==================== NATIVE CAMERA ====================
 async function captureNativePhoto(source) {
@@ -521,6 +626,22 @@ function loadVocab() {
   } catch(e) {}
 }
 
+// Refresh stored vocab meanings from the latest CEDICT data
+async function refreshVocabMeanings() {
+  if (!vocab.length) return;
+  const dict = await loadCEDICT();
+  let changed = false;
+  for (const w of vocab) {
+    const entry = dict[w.zh];
+    if (entry && (entry.en !== w.en || entry.py !== w.py)) {
+      w.en = entry.en;
+      w.py = entry.py;
+      changed = true;
+    }
+  }
+  if (changed) { saveVocab(); renderVocabList(); }
+}
+
 // ==================== HELPERS ====================
 function getWord(id) { return WORDS.find(w => w.id === id); }
 
@@ -593,20 +714,17 @@ function buildUploadZoneHtml() {
   return `
     <div class="upload-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
     <p id="uploadZoneText">Take a photo to extract Chinese vocabulary</p>
-    ${IS_NATIVE ? `
     <div class="upload-native-btns" id="nativeBtns">
       <button class="btn btn-primary" id="btnCamera">📷 Camera</button>
       <button class="btn btn-outline" id="btnGallery">🖼 Gallery</button>
-    </div>` : ''}
+    </div>
     <button id="btnTrySample" style="font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:4px;text-decoration:underline">Try sample image</button>
   `;
 }
 
 function bindUploadButtons() {
-  if (IS_NATIVE) {
-    document.getElementById('btnCamera')?.addEventListener('click', e => { e.stopPropagation(); captureNativePhoto('CAMERA'); });
-    document.getElementById('btnGallery')?.addEventListener('click', e => { e.stopPropagation(); captureNativePhoto('PHOTOS'); });
-  }
+  document.getElementById('btnCamera')?.addEventListener('click', e => { e.stopPropagation(); captureNativePhoto('CAMERA'); });
+  document.getElementById('btnGallery')?.addEventListener('click', e => { e.stopPropagation(); captureNativePhoto('PHOTOS'); });
   document.getElementById('btnTrySample')?.addEventListener('click', e => { e.stopPropagation(); processScreenshot(); });
 }
 
@@ -663,71 +781,106 @@ fileInput.addEventListener('change', () => {
 // Bind initial upload buttons
 bindUploadButtons();
 
-// ---- Sample image ----
+// ---- Sample images ----
+const sampleImages = ['duolingo.png', 'zhongwen.png'];
+
 async function processScreenshot() {
   try {
-    const resp = await fetch('duolingo.png');
-    const blob = await resp.blob();
-    const file = new File([blob], 'duolingo.png', { type: blob.type });
-    await processImageQueue([file]);
+    const files = [];
+    for (const name of sampleImages) {
+      const resp = await fetch(name);
+      const blob = await resp.blob();
+      files.push(new File([blob], name, { type: blob.type }));
+    }
+    await processImageQueue(files);
   } catch(e) {
-    showToast('Could not load sample image');
+    showToast('Could not load sample images');
   }
 }
 
 // ---- Real OCR path (Tesseract.js + CEDICT) ----
 const wordCache = {};
 
-let _imgQueue = [], _imgQueueIdx = 0, _collectedWords = [];
+let _imgQueue = [], _imgQueueIdx = 0, _collectedTexts = [];
 
 async function processImageQueue(files) {
   _imgQueue = files;
   _imgQueueIdx = 0;
-  _collectedWords = [];
+  _collectedTexts = [];
   await _processNext();
 }
 
 async function _processNext() {
   if (_imgQueueIdx >= _imgQueue.length) {
-    resetUploadZone();
-    if (_collectedWords.length) showWordSelection(_collectedWords);
-    else showToast('No Chinese words found');
+    // All images circled — now do one lookup for everything
+    if (!_collectedTexts.length) {
+      resetUploadZone();
+      showToast('No Chinese words found');
+      return;
+    }
+    showUploadLoading();
+    setProcessingText('Looking up vocabulary…');
+    try {
+      const vocabWords = await extractVocabFromTexts(_collectedTexts);
+      resetUploadZone();
+      if (!vocabWords.length) { showToast('No words found in dictionary'); return; }
+      showWordSelection(vocabWords);
+    } catch(err) {
+      console.error('Lookup failed:', err);
+      resetUploadZone();
+      showToast('Lookup failed — check network connection');
+    }
     return;
   }
   const file = _imgQueue[_imgQueueIdx];
   const total = _imgQueue.length;
   const current = _imgQueueIdx + 1;
-  showUploadLoading();
+
+  // Show the image immediately with a loading overlay
+  resetUploadZone();
+  uploadZone.style.display = 'none';
+  showImageAnnotation(file, [], current, total, null, true /* loadingMode */);
+
   try {
     const { text, ocrWords } = await runTesseractOCR(file);
     const chineseBoxes = (ocrWords || []).filter(w =>
       /[\u4e00-\u9fff]/.test(w.text) && w.confidence > 25
     );
     if (chineseBoxes.length === 0) {
+      // Hide annotation, go back to upload
+      const annotDiv = document.getElementById('imageAnnotation');
+      annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+      document.querySelector('.bottom-nav').style.display = '';
+      uploadZone.style.display = '';
       if (total > 1) showToast(`Image ${current}/${total}: no Chinese words found`);
-      else { resetUploadZone(); showToast('No Chinese words found in image'); return; }
+      else { showToast('No Chinese words found in image'); return; }
       _imgQueueIdx++;
       await _processNext();
       return;
     }
     if (chineseBoxes.length === 1) {
-      setProcessingText('Looking up vocabulary…');
-      const words = await extractVocabFromText(text);
-      _collectedWords.push(...words);
+      const sequences = [...new Set(text.match(/[\u4e00-\u9fff]+/g) || [])];
+      _collectedTexts.push(...sequences);
+      const annotDiv = document.getElementById('imageAnnotation');
+      annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+      document.querySelector('.bottom-nav').style.display = '';
+      uploadZone.style.display = '';
       if (total > 1) showToast(`Image ${current}/${total}: auto-extracted`);
       _imgQueueIdx++;
       await _processNext();
     } else {
-      resetUploadZone();
-      uploadZone.style.display = 'none';
-      showImageAnnotation(file, chineseBoxes, current, total, async (selectedWords) => {
-        _collectedWords.push(...selectedWords);
+      // OCR done — replace loading overlay with interactive annotation
+      showImageAnnotation(file, chineseBoxes, current, total, async (selectedTexts) => {
+        _collectedTexts.push(...selectedTexts);
         _imgQueueIdx++;
         await _processNext();
       });
     }
   } catch (err) {
-    resetUploadZone();
+    const annotDiv = document.getElementById('imageAnnotation');
+    annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+    document.querySelector('.bottom-nav').style.display = '';
+    uploadZone.style.display = '';
     showToast('OCR failed: ' + (err.message || 'unknown error'));
   }
 }
@@ -735,6 +888,10 @@ async function _processNext() {
 function setProcessingText(msg) {
   const el = document.querySelector('.processing-text');
   if (el) el.textContent = msg;
+  const overlay = document.getElementById('annotOcrStatus');
+  if (overlay) overlay.textContent = msg;
+  const label = document.querySelector('.annot-label');
+  if (label && document.getElementById('annotOcrOverlay')) label.textContent = msg;
 }
 
 async function runTesseractOCR(file) {
@@ -750,42 +907,47 @@ async function runTesseractOCR(file) {
   return { text: data.text, ocrWords: data.words };
 }
 
-function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
+function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingMode = false) {
   const annotDiv = document.getElementById('imageAnnotation');
   annotDiv.style.display = 'flex';
+  document.querySelector('.bottom-nav').style.display = 'none';
   const imageURL = URL.createObjectURL(file);
   const selected = new Set();
-  const progressLabel = (total > 1) ? `<span style="font-size:11px;color:var(--text3);margin-left:8px">${current} / ${total}</span>` : '';
-  const btnLabel = (total > 1 && current < total) ? 'Next →' : 'Continue →';
-
+  const btnLabel = (total > 1 && current < total) ? 'Next' : 'Continue';
   const progressText = total > 1 ? `Image ${current} of ${total}` : '';
+
   annotDiv.innerHTML = `
     <div class="annot-topbar">
-      <span class="annot-label">Circle the word you want to add</span>
+      <button class="annot-close-btn" id="btnAnnotCancel2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <span class="annot-label">${loadingMode ? 'Analyzing image…' : 'Circle the word you want to add'}</span>
     </div>
-    <div class="annotation-canvas-wrap" id="annotCanvasWrap" style="display:none"><canvas id="annotCanvas"></canvas></div>
-    <div class="annotation-bottom">
+    <div class="annotation-canvas-wrap" id="annotCanvasWrap" style="display:none;position:relative">
+      <canvas id="annotCanvas"></canvas>
+      ${loadingMode ? `<div class="annot-ocr-overlay" id="annotOcrOverlay"><div class="annot-ocr-spinner"></div><div class="annot-ocr-status" id="annotOcrStatus">Extracting Chinese text…</div></div>` : ''}
+    </div>
+    ${!loadingMode ? `<div class="annotation-bottom">
       ${progressText ? `<p class="annot-progress">${progressText}</p>` : ''}
       <div class="annot-btn-row">
-        <button class="btn btn-outline" id="btnAnnotCancel2">Cancel</button>
         <button class="btn btn-outline" id="btnAnnotClear">Clear</button>
-        <button class="btn btn-primary" id="btnAnnotConfirm" disabled>${btnLabel}</button>
+        <button class="btn btn-primary" id="btnAnnotConfirm">${btnLabel}</button>
       </div>
-    </div>
+    </div>` : ''}
   `;
 
   const canvas = document.getElementById('annotCanvas');
   const ctx = canvas.getContext('2d');
   const img = new Image();
 
+  // Hoist state so button listeners can access it immediately
+  let drawing = false;
+  let livePath = [];
+  let flashPath = null;
+  let redrawRef = () => {};
+
   img.onload = () => {
     canvas.width  = img.naturalWidth;
     canvas.height = img.naturalHeight;
     document.getElementById('annotCanvasWrap').style.display = '';
-
-    let drawing = false;
-    let livePath = [];
-    let flashPath = null;
 
     function redraw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -823,6 +985,7 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
       if (livePath.length) drawPath(livePath, 1);
       if (flashPath)       drawPath(flashPath.pts, flashPath.alpha);
     }
+    redrawRef = redraw;
 
     function getXY(e) {
       const rect = canvas.getBoundingClientRect();
@@ -856,9 +1019,7 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
     }
 
     function updateCount() {
-      const n = selected.size;
-      const btn = document.getElementById('btnAnnotConfirm');
-      btn.disabled = n === 0;
+      // Button always enabled — user can skip circling
     }
 
     canvas.addEventListener('mousedown',  e => { drawing = true; livePath = [getXY(e)]; });
@@ -869,37 +1030,45 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm) {
     canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; livePath.push(getXY(e)); redraw(); }, { passive: false });
     canvas.addEventListener('touchend',   e => { e.preventDefault(); if (!drawing) return; drawing = false; commitPath(); }, { passive: false });
 
-    function doCancel() {
-      annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
-      uploadZone.style.display = '';
-      URL.revokeObjectURL(imageURL);
-    }
-    document.getElementById('btnAnnotCancel2').addEventListener('click', doCancel);
+    redraw();
+  };
 
+  // Attach button listeners immediately — do not wait for img.onload
+  function doCancel() {
+    annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+    uploadZone.style.display = '';
+    document.querySelector('.bottom-nav').style.display = '';
+    URL.revokeObjectURL(imageURL);
+  }
+  document.getElementById('btnAnnotCancel2').addEventListener('click', doCancel);
+
+  if (!loadingMode) {
     document.getElementById('btnAnnotClear').addEventListener('click', () => {
-      selected.clear(); livePath = []; flashPath = null; redraw(); updateCount();
+      if (!selected.size && !livePath.length && !flashPath) return;
+      selected.clear(); livePath = []; flashPath = null; redrawRef();
     });
 
     document.getElementById('btnAnnotConfirm').addEventListener('click', async () => {
-      const btn = document.getElementById('btnAnnotConfirm');
-      btn.textContent = 'Looking up…'; btn.disabled = true;
       const texts = ocrWords.filter((_, i) => selected.has(i)).map(w => w.text);
+      annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
+      uploadZone.style.display = '';
+      document.querySelector('.bottom-nav').style.display = '';
+      URL.revokeObjectURL(imageURL);
+      if (onConfirm) { await onConfirm(texts); return; }
+      showUploadLoading();
+      setProcessingText('Looking up vocabulary…');
       try {
         const vocabWords = await extractVocabFromTexts(texts);
-        annotDiv.style.display = 'none'; annotDiv.innerHTML = '';
-        uploadZone.style.display = '';
-        URL.revokeObjectURL(imageURL);
-        if (onConfirm) { onConfirm(vocabWords); return; }
+        resetUploadZone();
         if (!vocabWords.length) { showToast('No words found in dictionary'); return; }
         showWordSelection(vocabWords);
-      } catch {
-        annotDiv.style.display = 'none'; uploadZone.style.display = '';
-        URL.revokeObjectURL(imageURL); showToast('Lookup failed');
+      } catch(err) {
+        console.error('Lookup failed:', err);
+        resetUploadZone();
+        showToast('Lookup failed — check network connection');
       }
     });
-
-    redraw();
-  };
+  }
 
   img.src = imageURL;
 }
@@ -909,54 +1078,56 @@ async function extractVocabFromText(rawText) {
   return extractVocabFromTexts(sequences);
 }
 
+// Local CEDICT dictionary — loaded once, instant lookups
+let _cedict = null;
+async function loadCEDICT() {
+  if (_cedict) return _cedict;
+  const res = await fetch('cedict.json');
+  _cedict = await res.json();
+  return _cedict;
+}
+
 async function extractVocabFromTexts(texts) {
+  const dict = await loadCEDICT();
   const seen = new Set();
   const words = [];
   for (const seq of texts) {
-    const segmented = await segmentChinese(seq);
+    const segmented = segmentChinese(seq, dict);
     for (const zh of segmented) {
       if (seen.has(zh)) continue;
       seen.add(zh);
-      const w = await lookupWordCEDICT(zh);
-      if (w) words.push(w);
+      const entry = dict[zh];
+      if (entry) {
+        const hskPos = HSK_POS[zh] || null;
+        words.push({ zh, py: entry.py, en: entry.en, pos: hskPos || 'other', ex: [] });
+      }
     }
   }
   return words;
 }
 
-async function segmentChinese(text) {
+function segmentChinese(text, dict) {
+  // Greedy max-length matching
   const result = [];
-  for (let i = 0; i < text.length; i++) {
-    for (let len = 1; len <= Math.min(4, text.length - i); len++) {
+  let i = 0;
+  while (i < text.length) {
+    let matched = false;
+    for (let len = Math.min(4, text.length - i); len >= 2; len--) {
       const candidate = text.substr(i, len);
-      const w = await lookupWordCEDICT(candidate);
-      if (w) result.push(candidate);
+      if (dict[candidate]) {
+        result.push(candidate);
+        i += len;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const ch = text[i];
+      if (dict[ch]) result.push(ch);
+      i++;
     }
   }
   return [...new Set(result)];
-}
-
-async function lookupWordCEDICT(zh) {
-  if (zh in wordCache) return wordCache[zh];
-  try {
-    const url = `https://cdn.jsdelivr.net/gh/krmanik/cedict-json/v2/${encodeURIComponent(zh)}.json`;
-    const res = await fetch(url);
-    if (!res.ok) { wordCache[zh] = null; return null; }
-    const data = await res.json();
-    if (!data.definitions) { wordCache[zh] = null; return null; }
-    const entries = Object.entries(data.definitions);
-    if (!entries.length) { wordCache[zh] = null; return null; }
-    entries.sort((a, b) => b[1].split(';').length - a[1].split(';').length);
-    const [pinyin, defStr] = entries[0];
-    const py = pinyinToTones(pinyin);
-    const defs = defStr.split(';').map(s => s.trim())
-      .filter(s => s.length > 1 && !s.startsWith('CL:') && !s.startsWith('see ') && !s.startsWith('variant of'));
-    if (!defs.length) { wordCache[zh] = null; return null; }
-    const hskPos = HSK_POS[zh] || null;
-    const word = { zh, py, en: defs[0], pos: hskPos || 'other', ex: [] };
-    wordCache[zh] = word;
-    return word;
-  } catch { wordCache[zh] = null; return null; }
 }
 
 // ---- Word selection UI ----
@@ -1010,10 +1181,12 @@ function showWordSelection(words) {
       newWords.forEach(w => {
         if (selected.has(w.zh) && !addedIds.has(w.zh)) {
           addedIds.add(w.zh);
+          const now = Date.now();
           vocab.push({
-            id: Date.now() + count,
+            id: now + count,
             zh: w.zh, py: w.py || '', en: w.en, pos: w.pos || 'other',
-            starred: false, wrong: 0, added: ++addOrder, ex: w.ex || []
+            starred: false, wrong: 0, added: ++addOrder, ex: w.ex || [],
+            ts: now + count
           });
           count++;
         }
@@ -1097,19 +1270,19 @@ function pinyinToTones(p) {
 }
 
 const exampleCache = {};
+let _examplesData = null;
+async function loadExamples() {
+  if (_examplesData) return _examplesData;
+  const res = await fetch('examples.json');
+  _examplesData = await res.json();
+  return _examplesData;
+}
+
 async function fetchExamples(zh) {
   if (zh in exampleCache) return exampleCache[zh];
   try {
-    const base = `https://tatoeba.org/api_v0/search?from=cmn&to=eng&query=${encodeURIComponent(zh)}&limit=20`;
-    const res = await fetch(`https://corsproxy.io/?${base}`);
-    if (!res.ok) { exampleCache[zh] = null; return null; }
-    const data = await res.json();
-    const results = (data.results || []).flatMap(r => {
-      const enTrans = (r.translations || []).flat().find(t => t.lang === 'eng');
-      if (!enTrans) return [];
-      return [{ zh: r.text, en: enTrans.text }];
-    });
-    exampleCache[zh] = results.length ? results : null;
+    const data = await loadExamples();
+    exampleCache[zh] = data[zh] || null;
     return exampleCache[zh];
   } catch { exampleCache[zh] = null; return null; }
 }
@@ -1134,31 +1307,15 @@ function matchExamplesToDefs(defs, examples) {
   });
 }
 
-function fetchDictionary(zh) {
+async function fetchDictionary(zh) {
   if (zh in dictCache) return dictCache[zh];
-  const promise = (async () => {
-    try {
-      const url = `https://cdn.jsdelivr.net/gh/krmanik/cedict-json/v2/${encodeURIComponent(zh)}.json`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!data.definitions) return null;
-      let entries = Object.entries(data.definitions).map(([pinyin, defStr]) => {
-        const definitions = defStr.split(';')
-          .map(d => d.trim())
-          .filter(d => d.length > 1 && !d.startsWith('CL:') && !d.startsWith('see ') && !d.startsWith('variant of') && !d.startsWith('abbr. for') && !d.startsWith('abbr. of') && !d.startsWith('Taiwan pr.'));
-        return definitions.length ? { pinyin, partOfSpeech: pinyinToTones(pinyin), definitions } : null;
-      }).filter(Boolean);
-      if (!entries.length) return null;
-      entries.sort((a, b) => b.definitions.length - a.definitions.length);
-      const hasCommon = entries.some(e => e.pinyin[0] === e.pinyin[0].toLowerCase());
-      if (hasCommon) entries = entries.filter(e => e.pinyin[0] === e.pinyin[0].toLowerCase());
-      if (entries.length === 1) entries[0].partOfSpeech = null;
-      return entries;
-    } catch(e) { return null; }
-  })();
-  dictCache[zh] = promise;
-  return promise;
+  const dict = await loadCEDICT();
+  const entry = dict[zh];
+  if (!entry) { dictCache[zh] = null; return null; }
+  const defs = entry.defs || [entry.en];
+  const result = [{ pinyin: entry.py, partOfSpeech: null, definitions: defs }];
+  dictCache[zh] = result;
+  return result;
 }
 
 function defPOS(zh, d) {
@@ -1170,24 +1327,31 @@ function defPOS(zh, d) {
   return null;
 }
 
-function renderDictEntries(entries, zh, examplesPerDef) {
+function renderDictEntries(entries, zh, examples) {
   if (!entries || !entries.length) return '';
-  let globalDefIdx = 0;
-  return entries.map((entry, entryIdx) => {
+  const defsHtml = entries.map(entry => {
     const badge = entry.partOfSpeech
       ? `<span class="dict-pos-badge">${entry.partOfSpeech}</span>` : '';
-    const lookupZh = entryIdx === 0 ? (zh || '') : '';
     const defs = entry.definitions.map((d, i) => {
-      const pos = defPOS(lookupZh, d);
+      const pos = defPOS(zh || '', d);
       const posLabel = pos ? (HSK_POS_DISPLAY[pos] || pos) : null;
       const posChip = posLabel ? `<span class="dict-def-pos pos-${pos}">${posLabel}</span>` : '';
-      const ex = examplesPerDef ? examplesPerDef[globalDefIdx] : null;
-      globalDefIdx++;
-      const exHtml = ex ? `<div class="def-example"><span class="def-ex-zh">${ex.zh}</span><span class="def-ex-en">${ex.en}</span></div>` : '';
-      return `<div class="dict-def"><span class="dict-def-num">${i+1}.</span>${posChip}${d}${exHtml}</div>`;
+      return `<div class="dict-def"><span class="dict-def-num">${i+1}.</span>${posChip}${d}</div>`;
     }).join('');
     return `<div class="dict-entry">${badge}${defs}</div>`;
   }).join('');
+
+  const exHtml = examples && examples.length ? `
+    <div class="examples-section">
+      <div class="examples-label">Example sentences</div>
+      ${examples.map(ex => `
+        <div class="example-sentence">
+          <div class="example-zh">${ex.zh}</div>
+          <div class="example-en">${ex.en}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  return defsHtml + exHtml;
 }
 
 function getFilteredVocab() {
@@ -1208,44 +1372,77 @@ function renderVocabList() {
     vocabList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);font-size:14px;font-weight:400">Upload screenshots to add vocabulary</div>';
     return;
   }
-  vocabList.innerHTML = list.map(w => {
+  function renderCard(w) {
     const related = findRelated(w);
     const posClass = getPosClass(w.pos);
     return `
-    <div class="vocab-card" data-id="${w.id}">
-      <div class="vocab-card-header">
-        <div class="vocab-chinese">${w.zh}</div>
-        <div class="vocab-info">
-          <div class="vocab-pinyin">${w.py}</div>
-          <div class="vocab-english">${w.en}</div>
+    <div class="swipe-wrap" data-swipe-id="${w.id}">
+      <div class="swipe-delete" onclick="event.stopPropagation();removeWord(${w.id})">Delete</div>
+      <div class="vocab-card" data-id="${w.id}">
+        <div class="vocab-card-header">
+          <div class="vocab-chinese">${w.zh}</div>
+          <div class="vocab-info">
+            <div class="vocab-pinyin">${w.py}</div>
+            <div class="vocab-english">${w.en}</div>
+          </div>
+          <div class="card-actions">
+            ${w.wrong ? `<span class="wrong-badge">✕${w.wrong}</span>` : ''}
+            <button class="star-btn ${w.starred?'starred':''}" onclick="event.stopPropagation();toggleStar(${w.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="${w.starred?'#F59E0B':'none'}" stroke="${w.starred?'#F59E0B':'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+            <button class="audio-btn" data-zh="${w.zh}" onclick="event.stopPropagation();speak('${w.zh}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="audio-btn" data-zh="${w.zh}" onclick="event.stopPropagation();speak('${w.zh}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
-        </div>
-      </div>
-      <div class="vocab-detail">
-        <div class="detail-content">
-          <div class="dict-section" data-zh="${w.zh}"></div>
-          <button class="btn-remove" onclick="event.stopPropagation();removeWord(${w.id})">Remove from list</button>
-          ${related.length > 0 ? `
-            <div class="related-section">
-              <h5>Related words (shared characters)</h5>
-              <div class="related-chips">
-                ${related.map(r => `<button class="related-chip" onclick="event.stopPropagation();scrollToWord(${r.id})">${r.zh} ${r.py}</button>`).join('')}
+        <div class="vocab-detail">
+          <div class="detail-content">
+            <div class="dict-section" data-zh="${w.zh}"></div>
+            ${related.length > 0 ? `
+              <div class="related-section">
+                <h5>Related words (shared characters)</h5>
+                <div class="related-chips">
+                  ${related.map(r => `<button class="related-chip" onclick="event.stopPropagation();scrollToWord(${r.id})">${r.zh} ${r.py}</button>`).join('')}
+                </div>
               </div>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
         </div>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  if (currentSort === 'recent') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+    const groups = {};
+    list.forEach(w => {
+      const d = new Date(w.added || w.ts || Date.now());
+      d.setHours(0,0,0,0);
+      const key = d.getTime();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(w);
+    });
+    const sortedKeys = Object.keys(groups).sort((a,b) => b - a);
+    vocabList.innerHTML = sortedKeys.map(key => {
+      const d = new Date(Number(key));
+      let label;
+      if (d.getTime() === today.getTime()) label = 'Today';
+      else if (d.getTime() === yesterday.getTime()) label = 'Yesterday';
+      else label = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      return `<div class="date-header">${label}</div>` + groups[key].map(renderCard).join('');
+    }).join('');
+  } else {
+    vocabList.innerHTML = list.map(renderCard).join('');
+  }
 
   vocabList.querySelectorAll('.vocab-card').forEach(card => {
     card.addEventListener('click', async () => {
       card.classList.toggle('expanded');
-      if (!card.classList.contains('expanded')) return;
       const dictEl = card.querySelector('.dict-section');
-      if (!dictEl || dictEl.dataset.loaded) return;
+      if (!dictEl) return;
+      if (!card.classList.contains('expanded')) {
+        dictEl.innerHTML = '';
+        dictEl.removeAttribute('data-loaded');
+        return;
+      }
+      if (dictEl.dataset.loaded) return;
       dictEl.dataset.loaded = 'true';
       const zh = dictEl.dataset.zh;
       dictEl.innerHTML = '<div class="dict-loading"><span class="dict-spinner"></span>Loading…</div>';
@@ -1253,25 +1450,92 @@ function renderVocabList() {
         fetchDictionary(zh),
         fetchExamples(zh)
       ]);
-      let examplesPerDef = null;
-      if (entries && examples) {
-        const allDefs = entries.flatMap(e => e.definitions);
-        examplesPerDef = matchExamplesToDefs(allDefs, examples);
-      }
-      const rendered = renderDictEntries(entries, zh, examplesPerDef);
+      const rendered = renderDictEntries(entries, zh, examples);
       dictEl.innerHTML = rendered || `<div class="dict-fallback">${zh}: ${card.querySelector('.vocab-english').textContent}</div>`;
     });
   });
 }
 
+// Swipe-to-delete handler
+function initSwipeHandlers() {
+  let activeSwipe = null;
+  vocabList.addEventListener('touchstart', e => {
+    const wrap = e.target.closest('.swipe-wrap');
+    if (!wrap) return;
+    const card = wrap.querySelector('.vocab-card');
+    // Close any previously open swipe
+    if (activeSwipe && activeSwipe !== wrap) {
+      activeSwipe.querySelector('.vocab-card').style.transform = '';
+      activeSwipe = null;
+    }
+    const touch = e.touches[0];
+    wrap._swipeStartX = touch.clientX;
+    wrap._swipeStartY = touch.clientY;
+    wrap._swiping = false;
+    wrap._swipeOpen = card.style.transform && card.style.transform !== 'none';
+    card.style.transition = 'none';
+  }, { passive: true });
+
+  vocabList.addEventListener('touchmove', e => {
+    const wrap = e.target.closest('.swipe-wrap');
+    if (!wrap || wrap._swipeStartX === undefined) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - wrap._swipeStartX;
+    const dy = touch.clientY - wrap._swipeStartY;
+    // Only lock to horizontal if clearly more horizontal than vertical
+    if (!wrap._swiping && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      wrap._swiping = Math.abs(dx) > Math.abs(dy);
+      if (!wrap._swiping) { wrap._swipeStartX = undefined; return; } // let scroll happen
+    }
+    if (!wrap._swiping) return;
+    e.preventDefault();
+    const card = wrap.querySelector('.vocab-card');
+    const openOffset = wrap._swipeOpen ? -80 : 0;
+    const offset = Math.min(0, Math.max(-80, openOffset + dx));
+    card.style.transform = `translateX(${offset}px)`;
+  }, { passive: false });
+
+  vocabList.addEventListener('touchend', e => {
+    const wrap = e.target.closest('.swipe-wrap');
+    if (!wrap || wrap._swipeStartX === undefined) return;
+    const card = wrap.querySelector('.vocab-card');
+    card.style.transition = '';
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - wrap._swipeStartX;
+    if (wrap._swipeOpen) {
+      // Was open: close if swiped right, otherwise stay open
+      if (dx > 30) { card.style.transform = ''; activeSwipe = null; }
+      else { card.style.transform = 'translateX(-80px)'; activeSwipe = wrap; }
+    } else {
+      // Was closed: open if swiped left enough
+      if (dx < -40) { card.style.transform = 'translateX(-80px)'; activeSwipe = wrap; }
+      else { card.style.transform = ''; }
+    }
+    wrap._swipeStartX = undefined;
+    wrap._swiping = false;
+  }, { passive: true });
+
+  // Close swipe on tap elsewhere
+  document.addEventListener('touchstart', e => {
+    if (activeSwipe && !activeSwipe.contains(e.target)) {
+      activeSwipe.querySelector('.vocab-card').style.transform = '';
+      activeSwipe = null;
+    }
+  }, { passive: true });
+}
+initSwipeHandlers();
+
 window.toggleStar = function(id) {
   const w = vocab.find(v => v.id === id);
-  if (w) { w.starred = !w.starred; saveVocab(); renderVocabList(); }
+  if (w) { w.starred = !w.starred; w.ts = Date.now(); saveVocab(); renderVocabList(); }
 };
 
 window.removeWord = function(id) {
   const w = vocab.find(v => v.id === id);
-  if (w) addedIds.delete(w.zh);
+  if (w) {
+    addedIds.delete(w.zh);
+    deleteWordFromFirestore(w.zh);
+  }
   vocab = vocab.filter(v => v.id !== id);
   saveVocab();
   renderVocabList();
@@ -1372,8 +1636,24 @@ function showCard(startFlipped) {
   } else {
     document.getElementById('fcZhAnswer').style.display = '';
     document.getElementById('fcZhAnswer').textContent = w.zh;
-    document.getElementById('fcMeanings').innerHTML = '';
-    document.getElementById('fcPos').style.display = 'none';
+    document.getElementById('fcPos').style.display = '';
+    document.getElementById('fcPos').innerHTML = `<span class="pos-chip ${getPosClass(w.pos)}">${w.pos || ''}</span>`;
+    // Show all meanings on the answer side
+    document.getElementById('fcMeanings').textContent = w.en;
+    fetchDictionary(w.zh).then(entries => {
+      if (!entries || fcDeck[fcIndex]?.id !== w.id) return;
+      const defs = entries.flatMap(e => e.definitions).slice(0, 5);
+      document.getElementById('fcMeanings').innerHTML = defs.map((d, i) =>
+        `<div><span class="def-num">${i + 1}.</span>${d}</div>`).join('');
+    });
+    // Show more meanings as the question too
+    loadCEDICT().then(dict => {
+      if (!dict || fcDeck[fcIndex]?.id !== w.id) return;
+      const entry = dict[w.zh];
+      if (entry && entry.defs && entry.defs.length > 1) {
+        document.getElementById('fcWord').textContent = entry.defs.slice(0, 3).join('; ');
+      }
+    });
   }
 
   document.getElementById('fcProgressText').textContent = `${fcIndex + 1} / ${fcDeck.length}`;
@@ -1430,7 +1710,7 @@ function answerCard(correct) {
     banner.className = 'fc-result-banner fc-result-correct';
   } else {
     const vw = vocab.find(v => v.id === w.id);
-    if (vw) { vw.wrong++; saveVocab(); }
+    if (vw) { vw.wrong++; vw.ts = Date.now(); saveVocab(); }
     fcWrongList.push(w);
     banner.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     banner.className = 'fc-result-banner fc-result-wrong';
@@ -1499,9 +1779,262 @@ window.practiceWrong = function() {
   startFlashcards(true);
 };
 
+// ==================== FIREBASE ====================
+let auth = null, db = null, currentUser = null, firebaseReady = false;
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyCdSlkO0cb72Hz5je9wMAYee4W2O7U3DAg",
+    authDomain: "snap-and-learn-6e59f.firebaseapp.com",
+    projectId: "snap-and-learn-6e59f",
+    storageBucket: "snap-and-learn-6e59f.firebasestorage.app",
+    messagingSenderId: "26569546633",
+    appId: "1:26569546633:web:bb884c4a7f338234619f58",
+    measurementId: "G-THVPTY31DV"
+  };
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  firebaseReady = true;
+
+  // Handle redirect result from Google Sign-In
+  auth.getRedirectResult().then(result => {
+    if (result.user) {
+      console.log('Signed in via redirect:', result.user.displayName);
+    }
+  }).catch(err => {
+    console.error('Redirect sign-in error:', err);
+  });
+} catch(e) {
+  console.error('Firebase init failed:', e);
+}
+
+// ==================== LOGIN GATE ====================
+const loginGate = document.getElementById('loginGate');
+const appRoot = document.getElementById('appRoot');
+
+document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
+  if (!firebaseReady) {
+    document.getElementById('loginError').textContent = 'No internet connection';
+    return;
+  }
+  const btn = document.getElementById('btnGoogleLogin');
+  const errorEl = document.getElementById('loginError');
+  errorEl.textContent = '';
+  btn.disabled = true;
+  btn.innerHTML = '<span>Signing in...</span>';
+
+  try {
+    console.log('IS_NATIVE:', IS_NATIVE, 'GoogleAuth:', !!window.Capacitor?.Plugins?.GoogleAuth);
+    if (IS_NATIVE && window.Capacitor?.Plugins?.GoogleAuth) {
+      // Native Google Sign-In
+      const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+      console.log('GoogleAuth result:', JSON.stringify(googleUser));
+      const idToken = googleUser.authentication.idToken;
+      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+      await auth.signInWithCredential(credential);
+    } else {
+      // Web fallback
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+    }
+  } catch(e) {
+    console.error('Sign-in error details:', JSON.stringify({code: e.code, message: e.message, native: IS_NATIVE, plugin: !!window.Capacitor?.Plugins?.GoogleAuth}));
+    if (e.code !== 'auth/popup-closed-by-user' && e.message !== 'The user canceled the sign-in flow.') {
+      errorEl.textContent = e.message || 'Sign-in failed';
+      console.error('Sign-in error:', e);
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<img src="google.svg" alt="Google" style="width:22px;height:22px"> Continue with Google';
+  }
+});
+
+document.getElementById('btnSkipLogin').addEventListener('click', () => {
+  showApp();
+});
+
+function showApp() {
+  loginGate.classList.add('hidden');
+  appRoot.style.display = '';
+}
+
+function showLogin() {
+  loginGate.classList.remove('hidden');
+  appRoot.style.display = 'none';
+}
+
+// --- Firestore sync helpers ---
+function vocabCollectionRef() {
+  if (!currentUser) return null;
+  return db.collection('users').doc(currentUser.uid).collection('vocab');
+}
+
+async function uploadVocabToFirestore() {
+  const ref = vocabCollectionRef();
+  if (!ref) return;
+  try {
+    // Firestore batches limited to 500 ops; chunk if needed
+    for (let i = 0; i < vocab.length; i += 450) {
+      const batch = db.batch();
+      const chunk = vocab.slice(i, i + 450);
+      for (const w of chunk) {
+        batch.set(ref.doc(w.zh), { ...w, ts: w.ts || w.id || Date.now() });
+      }
+      await batch.commit();
+    }
+  } catch(e) { console.error('Firestore upload error:', e); }
+}
+
+async function fetchAndMergeFromFirestore() {
+  const ref = vocabCollectionRef();
+  if (!ref) return;
+  try {
+    const snapshot = await ref.get();
+    const remoteWords = [];
+    snapshot.forEach(doc => remoteWords.push(doc.data()));
+    // Build map of local vocab by zh
+    const localMap = {};
+    for (const w of vocab) {
+      localMap[w.zh] = w;
+    }
+    // Merge: keep newer version by ts (falling back to id)
+    let changed = false;
+    for (const rw of remoteWords) {
+      const localW = localMap[rw.zh];
+      const remoteTs = rw.ts || rw.id || 0;
+      if (!localW) {
+        // Remote word not in local — add it
+        vocab.push(rw);
+        addedIds.add(rw.zh);
+        if (rw.added && rw.added > addOrder) addOrder = rw.added;
+        changed = true;
+      } else {
+        const localTs = localW.ts || localW.id || 0;
+        if (remoteTs > localTs) {
+          // Remote is newer — update local
+          Object.assign(localW, rw);
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      saveVocabLocal();
+      renderVocabList();
+    }
+    // Upload any local-only words to Firestore
+    const remoteZhSet = new Set(remoteWords.map(w => w.zh));
+    const localOnly = vocab.filter(w => !remoteZhSet.has(w.zh));
+    if (localOnly.length > 0) {
+      const batch = db.batch();
+      for (const w of localOnly) {
+        batch.set(ref.doc(w.zh), { ...w, ts: w.ts || w.id || Date.now() });
+      }
+      await batch.commit();
+    }
+  } catch(e) { console.error('Firestore merge error:', e); }
+}
+
+function syncWordToFirestore(word) {
+  const ref = vocabCollectionRef();
+  if (!ref) return;
+  const data = { ...word, ts: Date.now() };
+  ref.doc(word.zh).set(data).catch(e => console.error('Firestore sync error:', e));
+}
+
+function deleteWordFromFirestore(zh) {
+  const ref = vocabCollectionRef();
+  if (!ref) return;
+  ref.doc(zh).delete().catch(e => console.error('Firestore delete error:', e));
+}
+
+// --- Override saveVocab to also sync to Firestore ---
+// Keep a local-only version for merge operations (avoids infinite loop)
+function saveVocabLocal() {
+  try {
+    localStorage.setItem('snaplearn_vocab', JSON.stringify(vocab));
+    localStorage.setItem('snaplearn_addedIds', JSON.stringify([...addedIds]));
+    localStorage.setItem('snaplearn_addOrder', String(addOrder));
+  } catch(e) {}
+}
+// Override the original saveVocab
+saveVocab = function() {
+  saveVocabLocal();
+  // Sync all changed words (batch upload for simplicity)
+  if (currentUser) {
+    uploadVocabToFirestore();
+  }
+};
+
+// --- Profile panel ---
+const profileOverlay = document.getElementById('profileOverlay');
+const profileContent = document.getElementById('profileContent');
+
+function openProfilePanel() {
+  renderProfileContent();
+  profileOverlay.classList.add('open');
+}
+
+function closeProfilePanel() {
+  profileOverlay.classList.remove('open');
+}
+
+function renderProfileContent() {
+  if (currentUser) {
+    const photoURL = currentUser.photoURL || '';
+    const displayName = currentUser.displayName || 'User';
+    const email = currentUser.email || '';
+    profileContent.innerHTML = `
+      <div class="profile-user-info">
+        ${photoURL ? `<img class="profile-avatar" src="${photoURL}" alt="Avatar" referrerpolicy="no-referrer">` : `<div class="profile-avatar" style="background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--accent-dark)">${displayName.charAt(0)}</div>`}
+        <div>
+          <div class="profile-name">${displayName}</div>
+          <div class="profile-email">${email}</div>
+          <div class="profile-sync-status">Vocab synced to cloud</div>
+        </div>
+      </div>
+      <button class="btn-signout" id="btnSignOut">Sign Out</button>
+    `;
+    document.getElementById('btnSignOut').addEventListener('click', () => {
+      auth.signOut();
+      closeProfilePanel();
+    });
+  } else {
+    profileContent.innerHTML = `<p style="color:var(--text2);font-size:13px">Not signed in.</p>`;
+  }
+}
+
+// Wire up profile buttons (all 3 screens)
+document.querySelectorAll('.profile-btn').forEach(btn => {
+  btn.addEventListener('click', openProfilePanel);
+});
+profileOverlay.addEventListener('click', (e) => {
+  if (e.target === profileOverlay) closeProfilePanel();
+});
+
+// --- Auth state listener ---
+if (auth) auth.onAuthStateChanged(async (user) => {
+  currentUser = user;
+  if (user) {
+    showApp();
+    // Ensure all existing vocab words have a ts field
+    for (const w of vocab) {
+      if (!w.ts) w.ts = w.id || Date.now();
+    }
+    saveVocabLocal();
+    // Fetch remote and merge
+    await fetchAndMergeFromFirestore();
+  } else {
+    showLogin();
+  }
+  // Update profile panel if open
+  if (profileOverlay.classList.contains('open')) {
+    renderProfileContent();
+  }
+});
+
 // ==================== INIT ====================
 loadVocab();
 switchScreen('upload');
+refreshVocabMeanings();
 </script>
 </body>
 </html>

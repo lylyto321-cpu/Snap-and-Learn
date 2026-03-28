@@ -1,0 +1,50 @@
+================================================================================
+SNAP & LEARN — Release Notes
+================================================================================
+
+Version 1.0.0
+Release Date: March 2026
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INITIAL RELEASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+We're excited to introduce Snap & Learn — the fastest way to build Chinese
+vocabulary from the world around you.
+
+What's included in v1.0.0:
+
+• Photo OCR — Take a photo or upload an image to instantly recognize Chinese
+  characters using on-device text recognition. Your photos never leave your
+  device.
+
+• Visual word selection — Tap directly on recognized words overlaid on your
+  photo to choose exactly which vocabulary to save.
+
+• Comprehensive dictionary — Words are matched against CC-CEDICT with pinyin,
+  English definitions, part-of-speech labels, and HSK level indicators.
+
+• Vocabulary list — Browse, search, sort, and filter your saved words. Star
+  your favorites and expand cards for detailed definitions and example
+  sentences.
+
+• Flashcard review — Study vocabulary with flip cards that track correct and
+  incorrect answers. Switch between Chinese-to-English and English-to-Chinese
+  modes.
+
+• Audio pronunciation — Tap to hear native Mandarin pronunciation on vocabulary
+  cards and during flashcard review.
+
+• Example sentences — View contextual example sentences with pinyin and English
+  translations for deeper understanding.
+
+• Google Sign-In — Sign in securely with your Google account to sync vocabulary
+  across devices via Firebase.
+
+• Privacy-first design — All image processing happens on-device. No analytics.
+  No ads. No tracking.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Thank you for trying Snap & Learn! We'd love to hear your feedback —
+reach us at lyanneliang@gmail.com.

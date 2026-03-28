@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "snap-learn",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "www", "-l", "3000", "--no-clipboard"],
+      "port": 3000
+    }
+  ]
+}

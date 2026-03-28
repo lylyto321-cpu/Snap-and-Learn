@@ -4,3 +4,4 @@ dist/
 *.keystore
 android/app/release/
 .DS_Store
+android/app/google-services.json
