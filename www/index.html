@@ -8,8 +8,9 @@
 <script src="firebase-app-compat.js"></script>
 <script src="firebase-auth-compat.js"></script>
 <script src="firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --accent:#0D9488;--accent-light:#F0FDFA;--accent-dark:#0F766E;
@@ -345,7 +346,10 @@ body{
 .btn-sync-now:hover{background:rgba(13,148,136,.12)}
 </style>
 </head>
-<body>
+<body style="background:#F0F5F4">
+
+<!-- Loading cover: prevents white flash while JS initialises -->
+<div id="loadingCover" style="position:fixed;inset:0;z-index:9999;background:#F0F5F4"></div>
 
 <!-- Login Gate -->
 <div class="login-gate" id="loginGate">
@@ -786,6 +790,38 @@ async function processScreenshot() {
 // ---- Real OCR path (Tesseract.js + CEDICT) ----
 const wordCache = {};
 
+// Pre-initialise Tesseract worker once so it's ready when the user first takes a photo
+let _tesseractWorker = null;
+async function getTesseractWorker() {
+  if (_tesseractWorker) return _tesseractWorker;
+  _tesseractWorker = await Tesseract.createWorker('chi_sim', 1, {
+    logger: m => {
+      if (m.status === 'recognizing text') setProcessingText(`Recognizing text… ${Math.round(m.progress * 100)}%`);
+    }
+  });
+  return _tesseractWorker;
+}
+
+// Downscale image to max 1400px before OCR. Returns { blob, scale } so callers can
+// map OCR bounding boxes back to the original image coordinate space.
+async function downscaleImageForOCR(file, maxDim = 1400) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      if (scale >= 1) { resolve({ blob: file, scale: 1 }); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => resolve({ blob, scale }), 'image/jpeg', 0.9);
+    };
+    img.src = url;
+  });
+}
+
 let _imgQueue = [], _imgQueueIdx = 0, _collectedTexts = [];
 
 async function processImageQueue(files) {
@@ -880,16 +916,20 @@ function setProcessingText(msg) {
 }
 
 async function runTesseractOCR(file) {
-  const worker = await Tesseract.createWorker('chi_sim', 1, {
-    logger: m => {
-      if (m.status === 'loading tesseract core') setProcessingText('Loading OCR engine…');
-      else if (m.status === 'loading language traineddata') setProcessingText('Loading Chinese model…');
-      else if (m.status === 'recognizing text') setProcessingText(`Recognizing text… ${Math.round(m.progress * 100)}%`);
+  setProcessingText('Loading OCR engine…');
+  const [worker, { blob, scale }] = await Promise.all([getTesseractWorker(), downscaleImageForOCR(file)]);
+  const { data } = await worker.recognize(blob);
+  // Scale bounding boxes back to original image coordinates
+  const ocrWords = (data.words || []).map(w => ({
+    ...w,
+    bbox: {
+      x0: Math.round(w.bbox.x0 / scale),
+      y0: Math.round(w.bbox.y0 / scale),
+      x1: Math.round(w.bbox.x1 / scale),
+      y1: Math.round(w.bbox.y1 / scale),
     }
-  });
-  const { data } = await worker.recognize(file);
-  await worker.terminate();
-  return { text: data.text, ocrWords: data.words };
+  }));
+  return { text: data.text, ocrWords };
 }
 
 function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingMode = false) {
@@ -920,13 +960,11 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
   `;
 
   const canvas = document.getElementById('annotCanvas');
-  const ctx = canvas.getContext('2d');
-  const img = new Image();
+  const ctx    = canvas.getContext('2d');
+  const img    = new Image();
 
-  // Hoist state so button listeners can access it immediately
-  let drawing = false;
+  let drawing  = false;
   let livePath = [];
-  let flashPath = null;
   let redrawRef = () => {};
 
   img.onload = () => {
@@ -937,47 +975,38 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
     function redraw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
+      // Draw selected word highlights
       ocrWords.forEach((w, i) => {
         if (!selected.has(i)) return;
         ctx.fillStyle   = 'rgba(13,148,136,.30)';
         ctx.strokeStyle = '#0D9488';
         ctx.lineWidth   = Math.max(2, canvas.width * 0.003);
-        const r = 6;
-        const x = w.bbox.x0, y = w.bbox.y0,
-              wd = w.bbox.x1 - w.bbox.x0, ht = w.bbox.y1 - w.bbox.y0;
         ctx.beginPath();
-        ctx.roundRect(x, y, wd, ht, r);
+        ctx.roundRect(w.bbox.x0, w.bbox.y0, w.bbox.x1 - w.bbox.x0, w.bbox.y1 - w.bbox.y0, 6);
         ctx.fill(); ctx.stroke();
       });
-      function drawPath(pts, alpha) {
-        if (pts.length < 2) return;
-        ctx.save();
-        ctx.globalAlpha = alpha;
+      // Draw live stroke
+      if (livePath.length >= 2) {
+        const scale = canvas.width / canvas.getBoundingClientRect().width;
         ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        pts.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.closePath();
-        ctx.strokeStyle = '#0D9488';
-        ctx.lineWidth   = Math.max(3, canvas.width * 0.004);
+        ctx.moveTo(livePath[0].x, livePath[0].y);
+        for (let i = 1; i < livePath.length; i++) ctx.lineTo(livePath[i].x, livePath[i].y);
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth   = 5 * scale;
         ctx.lineJoin    = 'round';
         ctx.lineCap     = 'round';
-        ctx.setLineDash([]);
         ctx.stroke();
-        ctx.fillStyle = 'rgba(13,148,136,.12)';
-        ctx.fill();
-        ctx.restore();
       }
-      if (livePath.length) drawPath(livePath, 1);
-      if (flashPath)       drawPath(flashPath.pts, flashPath.alpha);
     }
     redrawRef = redraw;
 
     function getXY(e) {
       const rect = canvas.getBoundingClientRect();
-      const sx = canvas.width  / rect.width;
-      const sy = canvas.height / rect.height;
-      const src = e.touches ? e.touches[0] : e;
-      return { x: (src.clientX - rect.left) * sx, y: (src.clientY - rect.top) * sy };
+      const src  = e.touches ? e.touches[0] : e;
+      return {
+        x: (src.clientX - rect.left) * (canvas.width  / rect.width),
+        y: (src.clientY - rect.top)  * (canvas.height / rect.height),
+      };
     }
 
     function commitPath() {
@@ -987,33 +1016,38 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
       livePath.forEach(p => p2d.lineTo(p.x, p.y));
       p2d.closePath();
       ocrWords.forEach((w, i) => {
-        const cx = (w.bbox.x0 + w.bbox.x1) / 2;
-        const cy = (w.bbox.y0 + w.bbox.y1) / 2;
-        if (ctx.isPointInPath(p2d, cx, cy)) { selected.add(i); }
+        const testPts = [
+          [(w.bbox.x0 + w.bbox.x1) / 2, (w.bbox.y0 + w.bbox.y1) / 2],
+          [w.bbox.x0, w.bbox.y0], [w.bbox.x1, w.bbox.y0],
+          [w.bbox.x0, w.bbox.y1], [w.bbox.x1, w.bbox.y1],
+        ];
+        if (testPts.some(([px, py]) => ctx.isPointInPath(p2d, px, py))) selected.add(i);
       });
-      updateCount();
-      flashPath = { pts: [...livePath], alpha: 1 };
       livePath = [];
-      const tick = () => {
-        flashPath.alpha -= 0.08;
-        if (flashPath.alpha <= 0) { flashPath = null; redraw(); return; }
-        redraw();
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+      redraw();
     }
 
-    function updateCount() {
-      // Button always enabled — user can skip circling
-    }
-
-    canvas.addEventListener('mousedown',  e => { drawing = true; livePath = [getXY(e)]; });
-    canvas.addEventListener('mousemove',  e => { if (!drawing) return; livePath.push(getXY(e)); redraw(); });
-    canvas.addEventListener('mouseup',    e => { if (!drawing) return; drawing = false; commitPath(); });
-    canvas.addEventListener('mouseleave', e => { if (!drawing) return; drawing = false; commitPath(); });
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; livePath = [getXY(e)]; }, { passive: false });
-    canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; livePath.push(getXY(e)); redraw(); }, { passive: false });
-    canvas.addEventListener('touchend',   e => { e.preventDefault(); if (!drawing) return; drawing = false; commitPath(); }, { passive: false });
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId);
+      drawing = true;
+      livePath = [getXY(e)];
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!drawing) return;
+      livePath.push(getXY(e));
+      redraw();
+    });
+    canvas.addEventListener('pointerup', () => {
+      if (!drawing) return;
+      drawing = false;
+      commitPath();
+    });
+    canvas.addEventListener('pointercancel', () => {
+      if (!drawing) return;
+      drawing = false;
+      livePath = [];
+      redraw();
+    });
 
     redraw();
   };
@@ -1029,8 +1063,8 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
 
   if (!loadingMode) {
     document.getElementById('btnAnnotClear').addEventListener('click', () => {
-      if (!selected.size && !livePath.length && !flashPath) return;
-      selected.clear(); livePath = []; flashPath = null; redrawRef();
+      if (!selected.size && !livePath.length) return;
+      selected.clear(); livePath = []; redrawRef();
     });
 
     document.getElementById('btnAnnotConfirm').addEventListener('click', async () => {
@@ -1997,6 +2031,7 @@ profileOverlay.addEventListener('click', (e) => {
 
 // --- Auth state listener ---
 if (auth) auth.onAuthStateChanged(async (user) => {
+  document.getElementById('loadingCover')?.remove();
   currentUser = user;
   if (user) {
     showApp();
@@ -2020,6 +2055,7 @@ if (auth) auth.onAuthStateChanged(async (user) => {
 loadVocab();
 switchScreen('upload');
 refreshVocabMeanings();
+getTesseractWorker(); // warm up OCR engine in background
 </script>
 </body>
 </html>

@@ -4,10 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.snapandlearn.hanyulearn',
   appName: 'Snap & Learn',
   webDir: 'www',
+  backgroundColor: '#F0F5F4',
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false
+    webContentsDebuggingEnabled: true
   },
   plugins: {
     Camera: {
