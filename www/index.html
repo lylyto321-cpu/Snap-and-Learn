@@ -964,35 +964,37 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
   const img    = new Image();
 
   let drawing  = false;
-  let livePath = [];
+  let livePath = [];   // in canvas (display) coords
   let redrawRef = () => {};
 
   img.onload = () => {
+    document.getElementById('annotCanvasWrap').style.display = '';
+    // Step 1: set natural size so CSS max-width/max-height constrains the canvas correctly
     canvas.width  = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    document.getElementById('annotCanvasWrap').style.display = '';
+    // Step 2: now read the actual displayed size
+    const rect = canvas.getBoundingClientRect();
+    const dpr  = window.devicePixelRatio || 1;
+    // Step 3: resize canvas to display resolution and lock CSS size
+    canvas.width  = Math.round(rect.width  * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width  = rect.width  + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    // Scale factors: image px → canvas px (for word hit-testing)
+    const sx = canvas.width  / img.naturalWidth;
+    const sy = canvas.height / img.naturalHeight;
 
     function redraw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      // Draw selected word highlights
-      ocrWords.forEach((w, i) => {
-        if (!selected.has(i)) return;
-        ctx.fillStyle   = 'rgba(13,148,136,.30)';
-        ctx.strokeStyle = '#0D9488';
-        ctx.lineWidth   = Math.max(2, canvas.width * 0.003);
-        ctx.beginPath();
-        ctx.roundRect(w.bbox.x0, w.bbox.y0, w.bbox.x1 - w.bbox.x0, w.bbox.y1 - w.bbox.y0, 6);
-        ctx.fill(); ctx.stroke();
-      });
-      // Draw live stroke
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Draw the stroke line only — no boxes, no fills
       if (livePath.length >= 2) {
-        const scale = canvas.width / canvas.getBoundingClientRect().width;
         ctx.beginPath();
         ctx.moveTo(livePath[0].x, livePath[0].y);
         for (let i = 1; i < livePath.length; i++) ctx.lineTo(livePath[i].x, livePath[i].y);
         ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth   = 5 * scale;
+        ctx.lineWidth   = 4 * dpr;
         ctx.lineJoin    = 'round';
         ctx.lineCap     = 'round';
         ctx.stroke();
@@ -1001,30 +1003,30 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
     redrawRef = redraw;
 
     function getXY(e) {
-      const rect = canvas.getBoundingClientRect();
-      const src  = e.touches ? e.touches[0] : e;
+      const r = canvas.getBoundingClientRect();
       return {
-        x: (src.clientX - rect.left) * (canvas.width  / rect.width),
-        y: (src.clientY - rect.top)  * (canvas.height / rect.height),
+        x: (e.clientX - r.left) * dpr,
+        y: (e.clientY - r.top)  * dpr,
       };
     }
 
     function commitPath() {
-      if (livePath.length < 6) { livePath = []; redraw(); return; }
+      const path = livePath;
+      // Keep line visible — don't clear livePath
+      if (path.length < 6) return;
+      // Silently select words inside the drawn shape — no visual feedback
       const p2d = new Path2D();
-      p2d.moveTo(livePath[0].x, livePath[0].y);
-      livePath.forEach(p => p2d.lineTo(p.x, p.y));
+      p2d.moveTo(path[0].x / sx, path[0].y / sy);
+      path.forEach(p => p2d.lineTo(p.x / sx, p.y / sy));
       p2d.closePath();
       ocrWords.forEach((w, i) => {
-        const testPts = [
+        const pts = [
           [(w.bbox.x0 + w.bbox.x1) / 2, (w.bbox.y0 + w.bbox.y1) / 2],
           [w.bbox.x0, w.bbox.y0], [w.bbox.x1, w.bbox.y0],
           [w.bbox.x0, w.bbox.y1], [w.bbox.x1, w.bbox.y1],
         ];
-        if (testPts.some(([px, py]) => ctx.isPointInPath(p2d, px, py))) selected.add(i);
+        if (pts.some(([px, py]) => ctx.isPointInPath(p2d, px, py))) selected.add(i);
       });
-      livePath = [];
-      redraw();
     }
 
     canvas.addEventListener('pointerdown', e => {
@@ -1037,17 +1039,8 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
       livePath.push(getXY(e));
       redraw();
     });
-    canvas.addEventListener('pointerup', () => {
-      if (!drawing) return;
-      drawing = false;
-      commitPath();
-    });
-    canvas.addEventListener('pointercancel', () => {
-      if (!drawing) return;
-      drawing = false;
-      livePath = [];
-      redraw();
-    });
+    canvas.addEventListener('pointerup',     () => { if (!drawing) return; drawing = false; commitPath(); });
+    canvas.addEventListener('pointercancel', () => { drawing = false; livePath = []; redraw(); });
 
     redraw();
   };
@@ -1063,7 +1056,6 @@ function showImageAnnotation(file, ocrWords, current, total, onConfirm, loadingM
 
   if (!loadingMode) {
     document.getElementById('btnAnnotClear').addEventListener('click', () => {
-      if (!selected.size && !livePath.length) return;
       selected.clear(); livePath = []; redrawRef();
     });
 
